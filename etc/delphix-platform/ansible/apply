@@ -1,0 +1,50 @@
+#!/bin/bash
+
+set -o pipefail
+
+SOURCE_DIRECTORY="$(readlink -f "${BASH_SOURCE%/*}")"
+DLPX_ANSIBLE_DIRECTORY="${DLPX_ANSIBLE_DIRECTORY:-$SOURCE_DIRECTORY}"
+
+function find_playbooks() {
+	if ! find "$DLPX_ANSIBLE_DIRECTORY" \
+		-maxdepth 2 \
+		-mindepth 2 \
+		-name playbook.yml | sort -n; then
+		echo "Failure when finding playbooks." 2>&1
+		exit 1
+	fi
+}
+
+function apply_playbook() {
+	if ! ansible-playbook -vv \
+		-c "$DLPX_ANSIBLE_CONNECTION" \
+		-i "$DLPX_ANSIBLE_INVENTORY" \
+		"$1"; then
+		echo "Failure when applying playbook." 2>&1
+		exit 1
+	fi
+}
+
+if [[ -z "$DLPX_ANSIBLE_DIRECTORY" ]]; then
+	echo "DLPX_ANSIBLE_DIRECTORY is unset." >&2
+	exit 1
+fi
+
+if [[ -z "$DLPX_ANSIBLE_CONNECTION" ]]; then
+	echo "DLPX_ANSIBLE_CONNECTION is unset." >&2
+	exit 1
+fi
+
+if [[ -z "$DLPX_ANSIBLE_INVENTORY" ]]; then
+	echo "DLPX_ANSIBLE_INVENTORY is unset." >&2
+	exit 1
+fi
+
+if [[ "$(find_playbooks | wc -l)" -eq "0" ]]; then
+	echo "No playbooks found in '$DLPX_ANSIBLE_DIRECTORY'." >&2
+	exit 1
+fi
+
+find_playbooks | while read -r playbook; do
+	apply_playbook "$playbook"
+done
