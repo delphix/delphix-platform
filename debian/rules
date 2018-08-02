@@ -1,0 +1,116 @@
+#!/usr/bin/make -f
+#
+# Copyright 2018 Delphix
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+#
+# The following packages explicitly state the version of the linux
+# kernel to be installed, as well as any packages that are kernel
+# specific (e.g. tools like perf, that are tied to the kernel version).
+# Any additional tools that are not specific to the kernel version
+# should be included in the "tools.list.chroot" file.
+#
+DEPENDS = linux-generic, \
+	  linux-tools-generic,
+
+#
+# The following packages are required in order to generate VM artifacts
+# that are leveraging ZFS as their root filesystem.
+#
+DEPENDS += grub-pc, \
+	   delphix-zfs,
+
+#
+# The following packages provide the minimal set of packages that are
+# necessary to create a working system (e.g. networking, users, etc).
+#
+DEPENDS += ansible, \
+	   auditd, \
+	   cloud-init, \
+	   debsums, \
+	   net-tools, \
+	   open-vm-tools, \
+	   openssh-server, \
+	   rng-tools, \
+	   systemd-container, \
+	   ubuntu-minimal, \
+	   walinuxagent,
+
+#
+# The following package contains the GPG keys which allow us to download
+# from the repositories which contain packages containing debug symbols.
+#
+DEPENDS += ubuntu-dbgsym-keyring,
+
+#
+# These packages are tools that are intended for human convenience. The
+# product should not rely on them programmatically. They may be updated
+# or replaced without regard for backward compatibility.
+#
+DEPENDS += atop, \
+	   bpfcc-tools, \
+	   crash, \
+	   dnsutils, \
+	   dstat, \
+	   emacs-nox, \
+	   gdb, \
+	   glances, \
+	   htop, \
+	   iftop, \
+	   inotify-tools, \
+	   iotop, \
+	   jq, \
+	   kdump-tools, \
+	   lsof, \
+	   memstat, \
+	   ncdu, \
+	   procinfo, \
+	   psmisc, \
+	   pv, \
+	   screen, \
+	   sg3-utils, \
+	   snmp, \
+	   snmp-mibs-downloader, \
+	   strace, \
+	   sysstat, \
+	   tmux, \
+	   trace-cmd, \
+	   tshark, \
+	   vim
+
+%:
+	dh $@
+
+override_dh_gencontrol:
+	dh_gencontrol -- -Vdelphix:Depends="$(DEPENDS)"
+
+override_dh_auto_build:
+	#
+	# Don't run default make target during the build step; there
+	# isn't anything that needs to be built. Further, since the
+	# default make target is "package", without this override, an
+	# infinite loop would occur: make package -> make package -> ...
+	#
+
+override_dh_auto_test:
+	#
+	# Don't run 'make test' during the build step; we'll enforce
+	# testing via another mechanism, so running it during package
+	# builds is unnecessary.
+	#
+
+override_dh_auto_install:
+	dh_install etc/* /etc
+	dh_install lib/* /lib

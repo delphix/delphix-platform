@@ -1,0 +1,22 @@
+language: generic
+sudo: required
+
+branches:
+  only:
+   - staging
+   - trying
+   - master
+
+services:
+  - docker
+
+env:
+  - TARGET=package
+  - TARGET=shellcheck
+  - TARGET=shfmtcheck
+
+install:
+  - docker build -qt delphix-platform:latest docker
+
+script:
+  - ./scripts/docker-run.sh make $TARGET
