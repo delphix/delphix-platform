@@ -26,6 +26,9 @@ ExecStart=/etc/delphix-platform/ansible/apply
 #
 # Environment variables sorted alphabetically based on variable name.
 #
+Environment=ANSIBLE_LOCAL_TEMP=/tmp
+Environment=ANSIBLE_REMOTE_TEMP=/tmp
+Environment=ANSIBLE_RETRY_FILE_ENABLED=0
 Environment=DLPX_ANSIBLE_CONNECTION=local
 Environment=DLPX_ANSIBLE_INVENTORY=localhost,
 
