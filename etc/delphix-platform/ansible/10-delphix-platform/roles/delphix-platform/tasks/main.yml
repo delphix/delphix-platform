@@ -40,6 +40,19 @@
     mode: 0777
 
 #
+# Configure journald to persistently keep logs, so that we can inspect
+# them after a reboot has already occurred. This helps debugging, and
+# also can make the collection of support bundles more useful.
+#
+- lineinfile:
+    dest: /etc/systemd/journald.conf
+    regexp: "^#?{{ item.key }}="
+    line: "{{ item.key }}={{ item.value }}"
+  with_items:
+    - { key: "Storage", value: "persistent" }
+    - { key: "SystemMaxUse", value: "250M" }
+
+#
 # Configure command audit logging
 #
 # We want to record all commands executed on the appliance. Opt out for
