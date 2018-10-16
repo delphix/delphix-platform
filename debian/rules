@@ -76,6 +76,7 @@ DEPENDS += atop, \
 	   lsof, \
 	   man-db, \
 	   manpages, \
+	   manpages-dev, \
 	   memstat, \
 	   ncdu, \
 	   procinfo, \
