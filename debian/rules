@@ -74,6 +74,9 @@ DEPENDS += atop, \
 	   jq, \
 	   kdump-tools, \
 	   lsof, \
+	   man-db, \
+	   manpages, \
+	   manpages-dev, \
 	   memstat, \
 	   ncdu, \
 	   procinfo, \
