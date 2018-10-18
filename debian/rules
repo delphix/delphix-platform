@@ -39,6 +39,7 @@ DEPENDS += grub-pc, \
 DEPENDS += ansible, \
 	   auditd, \
 	   cloud-init, \
+	   debootstrap, \
 	   debsums, \
 	   net-tools, \
 	   open-vm-tools, \
