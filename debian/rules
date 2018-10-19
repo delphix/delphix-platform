@@ -59,8 +59,7 @@ DEPENDS += ubuntu-dbgsym-keyring,
 # product should not rely on them programmatically. They may be updated
 # or replaced without regard for backward compatibility.
 #
-DEPENDS += atop, \
-	   bpfcc-tools, \
+DEPENDS += bpfcc-tools, \
 	   crash, \
 	   dnsutils, \
 	   dstat, \
