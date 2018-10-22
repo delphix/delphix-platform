@@ -16,7 +16,7 @@ function find_playbooks() {
 }
 
 function apply_playbook() {
-	if ! ansible-playbook -vv \
+	if ! ansible-playbook -vvv \
 		-c "$DLPX_ANSIBLE_CONNECTION" \
 		-i "$DLPX_ANSIBLE_INVENTORY" \
 		"$1"; then
