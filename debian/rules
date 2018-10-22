@@ -39,6 +39,7 @@ DEPENDS += grub-pc, \
 DEPENDS += ansible, \
 	   auditd, \
 	   cloud-init, \
+	   debootstrap, \
 	   debsums, \
 	   net-tools, \
 	   open-vm-tools, \
@@ -59,8 +60,7 @@ DEPENDS += ubuntu-dbgsym-keyring,
 # product should not rely on them programmatically. They may be updated
 # or replaced without regard for backward compatibility.
 #
-DEPENDS += atop, \
-	   bpfcc-tools, \
+DEPENDS += bpfcc-tools, \
 	   crash, \
 	   dnsutils, \
 	   dstat, \
