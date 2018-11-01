@@ -40,6 +40,32 @@
     mode: 0777
 
 #
+# Create the directory and ZFS dataset that we'll use to store unpacked
+# upgrade images. This directory is used by the upgrade related scripts
+# found in this directory, but also used by upgrade-scripts stored in
+# the appliace-build repository (which generates the upgrade image).
+# Thus, we need to be careful if/when changing this, as we'll need to
+# coordinate the change with the appliance-build upgrade-scripts.
+#
+- file:
+    path: /var/dlpx-update
+    state: directory
+
+#
+# The zfs module cannot be run from the chroot environment that's used
+# by appliance-build. Thus, we disable this when run in that context by
+# only running this when ansible_is_chroot is not true.
+#
+- zfs:
+    name: rpool/update
+    state: present
+    extra_zfs_properties:
+      mountpoint: /var/dlpx-update
+      compression: gzip
+      quota: 15g
+  when: not ansible_is_chroot
+
+#
 # Configure journald to persistently keep logs, so that we can inspect
 # them after a reboot has already occurred. This helps debugging, and
 # also can make the collection of support bundles more useful.
