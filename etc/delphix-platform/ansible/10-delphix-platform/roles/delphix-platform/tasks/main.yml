@@ -16,6 +16,26 @@
 
 ---
 #
+# We use a non-standard directory for the appliance user's home
+# directory. As a result, we have to explicitly create the "base
+# directory" here, rather than rely on Ansible's user module to create
+# it below; otherwise that task will fail.
+#
+- file:
+    path: /export/home
+    state: directory
+    mode: 0755
+
+- user:
+    name: delphix
+    group: staff
+    groups: root
+    shell: /bin/bash
+    create_home: yes
+    comment: Delphix User
+    home: /export/home/delphix
+
+#
 # If we don't disable the "OS prober" script, when we update the grub
 # configuration, it may find OS installations that we don't want. For
 # example, when updating grub from within the chroot environment, it may
