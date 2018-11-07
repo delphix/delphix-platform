@@ -76,7 +76,7 @@ UNPACK_DIR=$(mktemp -d -p "$UPDATE_DIR" -t unpack.XXXXXXX)
 [[ -n "$MINIMUM_REBOOT_OPTIONAL_VERSION" ]] ||
 	die "MINIMUM_REBOOT_OPTIONAL_VERSION variable is empty"
 
-$opt_f && rm -rf "${UPDATE_DIR/$VERSION:?/}" >/dev/null 2>&1
+$opt_f && rm -rf "${UPDATE_DIR:?}/$VERSION" >/dev/null 2>&1
 
 [[ -d "$UPDATE_DIR/$VERSION" ]] && die "version $VERSION already exists"
 
