@@ -18,7 +18,7 @@ Source: delphix-platform
 Section: metapackages
 Priority: optional
 Maintainer: Delphix Engineering <eng@delphix.com>
-Build-Depends: debhelper (>= 10)
+Build-Depends: debhelper (>= 10), devscripts
 Standards-Version: 4.1.2
 
 Package: delphix-platform

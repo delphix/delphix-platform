@@ -14,6 +14,8 @@
 # limitations under the License.
 #
 
+VERSION := 0.0.1
+
 .PHONY: \
 	check \
 	package \
@@ -23,18 +25,12 @@
 check: shellcheck shfmtcheck
 
 package:
-	sed "s/@@VERSION@@/$$(date '+%Y.%m.%d.%H')/" \
-		debian/changelog.in > debian/changelog
-
-	dpkg-buildpackage
-
-	@for ext in dsc tar.xz; do \
-		mv -v ../delphix-platform_*.$$ext artifacts; \
-	done
-
-	@for ext in buildinfo changes deb; do \
-		mv -v ../delphix-platform_*_amd64.$$ext artifacts; \
-	done
+	rm -rf artifacts
+	mkdir artifacts
+	dch --create --package delphix-platform -v $(VERSION) \
+			"Automatically generated changelog entry."
+	dpkg-buildpackage -b -uc -us
+	mv ../delphix-platform*.deb artifacts/
 
 shellcheck:
 	shellcheck \

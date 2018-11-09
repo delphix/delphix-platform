@@ -14,10 +14,11 @@
 # limitations under the License.
 #
 
-debian/.debhelper
+debian/*.debhelper
 debian/changelog
 debian/debhelper-build-stamp
 debian/delphix-platform.debhelper.log
 debian/delphix-platform.substvars
 debian/delphix-platform
 debian/files
+/artifacts
