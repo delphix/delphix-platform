@@ -28,6 +28,10 @@ function usage() {
 	exit 2
 }
 
+function report_progress_inc() {
+	echo "Progress increment: $(date +%T:%N%z), $1, $2"
+}
+
 function cleanup() {
 	[[ -d "$UNPACK_DIR" ]] && rm -rf "$UNPACK_DIR"
 }
@@ -47,6 +51,8 @@ shift $((OPTIND - 1))
 [[ "$EUID" -ne 0 ]] && die "must be run as root"
 [[ -d "$UPDATE_DIR" ]] || die "$UPDATE_DIR does not exist"
 
+report_progress_inc 10 "Extracting upgrade image."
+
 case "$1" in
 *.upgrade.tar.gz) ;;
 *) die "The upgrade image must be a '.upgrade.tar.gz' file" ;;
@@ -61,6 +67,8 @@ UNPACK_DIR=$(mktemp -d -p "$UPDATE_DIR" -t unpack.XXXXXXX)
 	tar -xzf -
 ) <"$1" ||
 	die "failed to extract upgrade image '$1'"
+
+report_progress_inc 40 "Verifying format."
 
 [[ -f "$UNPACK_DIR/version.info" ]] || die "the upgrade image is corrupt"
 
@@ -85,5 +93,7 @@ mv "$UNPACK_DIR" "$UPDATE_DIR/$VERSION" ||
 
 rm -f "$UPDATE_DIR/latest" || die "failed to remove 'latest' symlink"
 ln -s "$VERSION" "$UPDATE_DIR/latest" || die "failed to create 'latest' symlink"
+
+report_progress_inc 100 "Unpacking successful."
 
 exit 0
