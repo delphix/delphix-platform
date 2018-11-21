@@ -168,6 +168,20 @@
     replace: '#\1'
 
 #
+# Ssh leads to the CLI, not bash, so let's remove all the linuxy shell goodies,
+# like last-login, "welcome to ubuntu", and help messages. This makes linux and
+# illumos look the same, too.
+#
+- replace:
+    dest: /etc/ssh/sshd_config
+    regexp: '^#?[\s]*PrintLastLog.*$'
+    replace: 'PrintLastLog no'
+- replace:
+    dest: /etc/pam.d/sshd
+    regexp: '^(session[\s]+optional[\s]+pam_motd\.so.*)$'
+    replace: '#\1'
+
+#
 # Enable SNMP client tools to load MIBs by default.
 #
 - replace:
