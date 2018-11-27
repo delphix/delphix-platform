@@ -42,6 +42,36 @@ function apply_playbook() {
 	fi
 }
 
+#
+# To reduce the bootup latency and the latency to start services that
+# depend on this service, we only want to apply the configuration a
+# single time. This way, the configuration will be applied on the first
+# boot, but not on subsequent boots. This will allow the bootup time for
+# the subsequent boots to be quicker.
+#
+# Thus, if this "ansible-done" file is present, this signifies that the
+# ansible configuration has already been applied, so there's no need to
+# apply this configuration again.
+#
+# We don't use Systemd's "ConditionPathExists" directive to disable the
+# service after it's been run once, for a couple of reasons:
+#
+# 1. That would cause the service to enter a "failed" state when the
+#    file exists. This isn't the behavior we want, since it then makes
+#    it more difficult for other services to depend on this service
+#    running successfully.
+#
+# 2. When the file exists, restarting "delphix-platform" would not
+#    result in restarting services that depend on "delphix-platform". We
+#    rely on restarts to "delphix-platfrom" causing restarts to all
+#    dependent services, so we need to ensure this functionality
+#    continues to work, even if the ansible configuration doesn't have
+#    to be re-applied.
+#
+if [[ -f /etc/delphix-platform/ansible-done ]]; then
+	exit 0
+fi
+
 if [[ -z "$DLPX_ANSIBLE_DIRECTORY" ]]; then
 	echo "DLPX_ANSIBLE_DIRECTORY is unset." >&2
 	exit 1
@@ -65,3 +95,22 @@ fi
 find_playbooks | while read -r playbook; do
 	apply_playbook "$playbook"
 done
+
+#
+# This script is executed as part of the appliance-build process so that
+# configuration that's required before the first boot (e.g. bootloader)
+# can be applied using the same mechanism as configuration that can be
+# applied after the first boot.
+#
+# Thus, when this script is executed in this way, via appliance-build,
+# we need to be careful not to try to create this file. Otherwise we'd
+# modify the root filesystem of the system running the build, rather
+# than the Delphix appliance's root filesystem that's being configured.
+#
+# We detect if this script is being executed via appliance-build or not,
+# by inspecting this environment variable. It will be set to "chroot"
+# only by appliance-build; otherwise it should contain the value "local".
+#
+if [[ "$DLPX_ANSIBLE_CONNECTION" != "chroot" ]]; then
+	touch /etc/delphix-platform/ansible-done
+fi
