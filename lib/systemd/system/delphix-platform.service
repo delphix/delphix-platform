@@ -19,9 +19,19 @@ Description=Delphix Appliance Platform Service
 After=local-fs.target
 Before=rsync.service
 
+#
+# Consumers of this service (e.g. upgrade, factory reset, etc.) are aware
+# of this file and it's implications. Thus, if we ever need to change this
+# file's path, we'll likely have to also update all of the consumers of
+# this service; since these consumers may rely on removing this file, in
+# order to force this service to re-run.
+#
+ConditionPathExists=!/etc/delphix-platform/ansible-done
+
 [Service]
 Type=oneshot
 ExecStart=/etc/delphix-platform/ansible/apply
+ExecStartPost=/usr/bin/touch /etc/delphix-platform/ansible-done
 
 #
 # Environment variables sorted alphabetically based on variable name.
