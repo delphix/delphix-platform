@@ -14,7 +14,11 @@
 # limitations under the License.
 #
 
-VERSION := 0.0.1
+#
+# The version field defaults to a timestamp. Note that it can be
+# overridden by running: make package VERSION="<custom version>"
+#
+VERSION := $(shell date '+%Y.%m.%d.%H')
 
 .PHONY: \
 	check \
@@ -25,12 +29,17 @@ VERSION := 0.0.1
 check: shellcheck shfmtcheck
 
 package:
-	rm -rf artifacts
-	mkdir artifacts
+	@rm -f debian/changelog
 	dch --create --package delphix-platform -v $(VERSION) \
 			"Automatically generated changelog entry."
-	dpkg-buildpackage -b -uc -us
-	mv ../delphix-platform*.deb artifacts/
+	dpkg-buildpackage -us
+	@for ext in dsc tar.xz; do \
+		mv -v ../delphix-platform_*.$$ext artifacts; \
+	done
+
+	@for ext in buildinfo changes deb; do \
+		mv -v ../delphix-platform_*_amd64.$$ext artifacts; \
+	done
 
 shellcheck:
 	shellcheck \
