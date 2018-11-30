@@ -22,6 +22,8 @@ Before=rsync.service
 [Service]
 Type=oneshot
 ExecStart=/etc/delphix-platform/ansible/apply
+ExecReload=/bin/true
+RemainAfterExit=yes
 
 #
 # Environment variables sorted alphabetically based on variable name.
