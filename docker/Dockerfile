@@ -30,6 +30,7 @@ RUN \
   apt-get update && \
   apt-get install -y \
       debhelper \
+      devscripts \
       dpkg-dev \
       make \
       shellcheck \

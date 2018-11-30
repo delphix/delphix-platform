@@ -16,14 +16,14 @@
 #
 
 #
-# The following packages explicitly state the version of the linux
-# kernel to be installed, as well as any packages that are kernel
-# specific (e.g. tools like perf, that are tied to the kernel version).
-# Any additional tools that are not specific to the kernel version
-# should be included in the "tools.list.chroot" file.
+# The following meta-package consolidates all the kernel packages required
+# by the Delphix Appliance for a given platform. Note that delphix-kernel
+# only has dependencies on kernel modules and tools that are built for a
+# specific version of the kernel. Any additional tools that are not specific
+# to a particular kernel version should be included in the "tools.list.chroot"
+# file.
 #
-DEPENDS = linux-generic, \
-	  linux-tools-generic,
+DEPENDS = delphix-kernel,
 
 #
 # The following packages are required in order to generate VM artifacts
@@ -54,6 +54,13 @@ DEPENDS += ansible, \
 # from the repositories which contain packages containing debug symbols.
 #
 DEPENDS += ubuntu-dbgsym-keyring,
+
+#
+# This package contains a consolidation for third-party packages built
+# by delphix as well as build info for all packages built by the linux-pkg
+# framework.
+#
+DEPENDS += delphix-extra,
 
 #
 # These packages are tools that are intended for human convenience. The

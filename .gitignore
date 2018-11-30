@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-debian/.debhelper
+debian/*.debhelper
 debian/changelog
 debian/debhelper-build-stamp
 debian/delphix-platform.debhelper.log

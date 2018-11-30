@@ -14,6 +14,12 @@
 # limitations under the License.
 #
 
+#
+# The version field defaults to a timestamp. Note that it can be
+# overridden by running: make package VERSION="<custom version>"
+#
+VERSION := $(shell date '+%Y.%m.%d.%H')
+
 .PHONY: \
 	check \
 	package \
@@ -23,11 +29,10 @@
 check: shellcheck shfmtcheck
 
 package:
-	sed "s/@@VERSION@@/$$(date '+%Y.%m.%d.%H')/" \
-		debian/changelog.in > debian/changelog
-
-	dpkg-buildpackage
-
+	@rm -f debian/changelog
+	dch --create --package delphix-platform -v $(VERSION) \
+			"Automatically generated changelog entry."
+	dpkg-buildpackage -us
 	@for ext in dsc tar.xz; do \
 		mv -v ../delphix-platform_*.$$ext artifacts; \
 	done
