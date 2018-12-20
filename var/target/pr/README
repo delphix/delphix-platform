@@ -1,0 +1,7 @@
+The /var/target/pr directory is used by the LinuxIO (LIO) framework to
+store persistent reservation data. If this directory is not present then
+SCSI-3 reservations will not work on iSCSI LUNs exposed by LIO, which are
+required by Windows Server Failover Cluster.
+
+Do not delete this README from source as this will remove the /var/target/pr
+directory from git.
