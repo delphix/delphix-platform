@@ -68,6 +68,7 @@ DEPENDS += delphix-extra,
 # or replaced without regard for backward compatibility.
 #
 DEPENDS += bpfcc-tools, \
+	   bpftrace, \
 	   crash, \
 	   dnsutils, \
 	   dstat, \
