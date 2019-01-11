@@ -122,8 +122,3 @@ override_dh_auto_test:
 	# builds is unnecessary.
 	#
 
-override_dh_auto_install:
-	dh_install etc/* /etc
-	dh_install lib/* /lib
-	dh_install usr/* /usr
-	dh_install var/* /var
