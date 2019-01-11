@@ -27,6 +27,21 @@ case $1 in
 
 	systemctl disable delphix-platform.service
 
+	#
+	# We also need to remove the "ansible-done" file, to ensure that
+	# package removal will remove the "/var/lib/delphix-platform"
+	# directory. Since the "ansible-done" file isn't "owned' by the
+	# package, if it exists, it'll cause the package manager to
+	# leave the file and directory lingering on the filesystem on
+	# uninstallation; the package removal will succeed, but the
+	# directory won't be removed.
+	#
+	# Also note, this command needs to stay in sync with the command
+	# that's executed when "systemctl reload delphix-platform" is
+	# called. See the "delphix-platform.service" file for details.
+	#
+	rm -f /var/lib/delphix-platform/ansible-done
+
 	;;
 esac
 
