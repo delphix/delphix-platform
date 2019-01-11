@@ -21,8 +21,8 @@ Before=rsync.service
 
 [Service]
 Type=oneshot
-ExecStart=/etc/delphix-platform/ansible/apply
-ExecReload=/bin/rm -f /etc/delphix-platform/ansible-done
+ExecStart=/var/lib/delphix-platform/ansible/apply
+ExecReload=/bin/rm -f /var/lib/delphix-platform/ansible-done
 RemainAfterExit=yes
 
 #

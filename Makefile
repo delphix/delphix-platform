@@ -43,12 +43,12 @@ package:
 
 shellcheck:
 	shellcheck \
-		etc/delphix-platform/ansible/apply \
-		etc/delphix-platform/upgrade/download-latest-image \
-		etc/delphix-platform/upgrade/unpack-image
+		usr/bin/download-latest-image \
+		usr/bin/unpack-image \
+		var/lib/delphix-platform/ansible/apply
 
 shfmtcheck:
 	! shfmt -d \
-		etc/delphix-platform/ansible/apply \
-		etc/delphix-platform/upgrade/download-latest-image \
-		etc/delphix-platform/upgrade/unpack-image | grep .
+		usr/bin/download-latest-image \
+		usr/bin/unpack-image \
+		var/lib/delphix-platform/ansible/apply | grep .
