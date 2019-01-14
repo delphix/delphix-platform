@@ -21,9 +21,15 @@ Before=rsync.service
 
 [Service]
 Type=oneshot
-ExecStart=/etc/delphix-platform/ansible/apply
-ExecReload=/bin/rm -f /etc/delphix-platform/ansible-done
+ExecStart=/var/lib/delphix-platform/ansible/apply
 RemainAfterExit=yes
+
+#
+# Please ensure this command remains consistent with the cleanup that
+# must occur on package removal. Please see the package's "prerm" file
+# for more details.
+#
+ExecReload=/bin/rm -f /var/lib/delphix-platform/ansible-done
 
 #
 # Environment variables sorted alphabetically based on variable name.

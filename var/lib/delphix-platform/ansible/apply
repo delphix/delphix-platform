@@ -29,6 +29,20 @@ function find_playbooks() {
 		echo "Failure when finding playbooks." 2>&1
 		exit 1
 	fi
+
+	#
+	# Temporarily, we need to maintain backwards compatibility with
+	# software that still installs ansible configuration into the
+	# old directory. Once all consumers can be updated to install
+	# into the new directory, we can remove this logic.
+	#
+	if ! find "/etc/delphix-platform/ansible" \
+		-maxdepth 2 \
+		-mindepth 2 \
+		-name playbook.yml | sort -n; then
+		echo "Failure when finding playbooks." 2>&1
+		exit 1
+	fi
 }
 
 function apply_playbook() {
@@ -68,7 +82,7 @@ function apply_playbook() {
 #    continues to work, even if the ansible configuration doesn't have
 #    to be re-applied.
 #
-if [[ -f /etc/delphix-platform/ansible-done ]]; then
+if [[ -f /var/lib/delphix-platform/ansible-done ]]; then
 	exit 0
 fi
 
@@ -112,5 +126,5 @@ done
 # only by appliance-build; otherwise it should contain the value "local".
 #
 if [[ "$DLPX_ANSIBLE_CONNECTION" != "chroot" ]]; then
-	touch /etc/delphix-platform/ansible-done
+	touch /var/lib/delphix-platform/ansible-done
 fi
