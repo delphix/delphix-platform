@@ -1,0 +1,21 @@
+#!/bin/sh
+
+#
+# We use this to ensure the logs created during upgrade are cleaned up,
+# such that they don't consume too much space on the root filesystem.
+# Using 7 days as the limit for how long we keeps logs, vs some other
+# number of days, is sort of an arbitrary decision; ultimately, we just
+# need to keep logs for a long enough time, so that they're still
+# available when they're needed (e.g. to root cause an upgrade failure),
+# and removed before they consume storage space to the point of causing
+# capacity problems on the root filesystem and/or root pool.
+#
+find /var/log/delphix-upgrade -type f -mtime +7 -delete
+
+#
+# After the old files have been deleted, we need to remove any empty
+# directories; this includes "/var/log/delphix-upgrade" itself. The
+# assumption is "/var/delphix-upgrade" will be created by the upgrade
+# scripts if it doesn't already exist.
+#
+find /var/log/delphix-upgrade -type d -mtime +7 -empty -delete
