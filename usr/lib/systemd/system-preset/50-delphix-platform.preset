@@ -1,6 +1,5 @@
-#!/bin/bash -eux
 #
-# Copyright 2018 Delphix
+# Copyright 2019 Delphix
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,14 +14,8 @@
 # limitations under the License.
 #
 
-case $1 in
-    configure)
-	systemctl enable auditd.service
-	systemctl enable delphix-platform.service
-	systemctl enable systemd-networkd.service
+disable walinuxagent.service
 
-	systemctl disable walinuxagent.service
-	;;
-esac
-
-exit 0
+enable auditd.service
+enable delphix-platform.service
+enable systemd-networkd.service

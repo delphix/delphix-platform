@@ -18,17 +18,7 @@
 case $1 in
     upgrade|remove)
 	#
-	# Removal is not quite the opposite of installation; we leave the
-	# non-delphix services alone, even if the postinst script changed
-	# the state of these services. This is because we don't know what
-	# the state of these services was before the postinst script ran,
-	# so we can't reliably restore the system back to that prior state.
-	#
-
-	systemctl disable delphix-platform.service
-
-	#
-	# We also need to remove the "ansible-done" file, to ensure that
+	# We need to remove the "ansible-done" file, to ensure that
 	# package removal will remove the "/var/lib/delphix-platform"
 	# directory. Since the "ansible-done" file isn't "owned' by the
 	# package, if it exists, it'll cause the package manager to
