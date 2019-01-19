@@ -60,6 +60,15 @@
     mode: 0777
 
 #
+# This directory is used by upgrade; it's bind mounted into the upgrade
+# container such that software can write files to this directory, and
+# these files can easily be accessed by software running on the host.
+#
+- file:
+    path: /var/log/delphix-upgrade
+    state: directory
+
+#
 # Create the directory and ZFS dataset that we'll use to store unpacked
 # upgrade images. This directory is used by the upgrade related scripts
 # found in this directory, but also used by upgrade-scripts stored in
