@@ -16,7 +16,7 @@
 #
 
 case $1 in
-    upgrade|remove)
+upgrade | remove)
 	#
 	# Removal is not quite the opposite of installation; we leave the
 	# non-delphix services alone, even if the postinst script changed

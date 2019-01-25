@@ -15,6 +15,13 @@
 # limitations under the License.
 #
 
+# Map supported platform to the kernel type that it uses.
+KERNEL_TYPE.aws := aws
+KERNEL_TYPE.azure := azure
+KERNEL_TYPE.esx := generic
+KERNEL_TYPE.gcp := gcp
+KERNEL_TYPE.kvm := kvm
+
 #
 # The following meta-package consolidates all the kernel packages required
 # by the Delphix Appliance for a given platform. Note that delphix-kernel
@@ -23,7 +30,7 @@
 # to a particular kernel version should be included in the "tools.list.chroot"
 # file.
 #
-DEPENDS = delphix-kernel,
+DEPENDS = delphix-kernel-$(KERNEL_TYPE.$(TARGET_PLATFORM)),
 
 #
 # The following packages are required in order to generate VM artifacts
@@ -42,12 +49,10 @@ DEPENDS += ansible, \
 	   debootstrap, \
 	   debsums, \
 	   net-tools, \
-	   open-vm-tools, \
 	   openssh-server, \
 	   rng-tools, \
 	   systemd-container, \
-	   ubuntu-minimal, \
-	   walinuxagent,
+	   ubuntu-minimal,
 
 #
 # The following package contains the GPG keys which allow us to download
@@ -61,6 +66,14 @@ DEPENDS += ubuntu-dbgsym-keyring,
 # framework.
 #
 DEPENDS += delphix-extra,
+
+# Platform-specific dependencies
+DEPENDS.aws =
+DEPENDS.azure = walinuxagent,
+DEPENDS.esx = open-vm-tools,
+DEPENDS.gcp =
+DEPENDS.kvm =
+DEPENDS += $(DEPENDS.$(TARGET_PLATFORM))
 
 #
 # These packages are tools that are intended for human convenience. The
@@ -110,9 +123,7 @@ override_dh_gencontrol:
 override_dh_auto_build:
 	#
 	# Don't run default make target during the build step; there
-	# isn't anything that needs to be built. Further, since the
-	# default make target is "package", without this override, an
-	# infinite loop would occur: make package -> make package -> ...
+	# isn't anything that needs to be built.
 	#
 
 override_dh_auto_test:

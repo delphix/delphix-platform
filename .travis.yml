@@ -11,7 +11,7 @@ services:
   - docker
 
 env:
-  - TARGET=package
+  - TARGET=packages
   - TARGET=shellcheck
   - TARGET=shfmtcheck
 

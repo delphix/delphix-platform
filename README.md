@@ -10,10 +10,10 @@ Run this command on "dlpxdc.co" to create the VM used to do the build:
 
 Log into that VM using the "ubuntu" user, and run these commands:
 
-    $ git clone https://github.com/prakashsurya/delphix-platform.git
+    $ git clone https://github.com/delphix/delphix-platform.git
     $ cd delphix-platform
     $ ansible-playbook bootstrap/playbook.yml
-    $ ./scripts/docker-run.sh make package
+    $ ./scripts/docker-run.sh make packages
 
 ## Statement of Support
 
