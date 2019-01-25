@@ -20,6 +20,27 @@ configure)
 	systemctl enable auditd.service
 	systemctl enable delphix-platform.service
 	systemctl enable systemd-networkd.service
+
+	if ! id -u postgres >/dev/null; then
+		# When installing postgres, a postgres user is created unless it
+		# already exists. To have a consistent UID accross installations
+		# and to facilitate migration from Illumos we create a postgres
+		# user with the same UID as in Illumos. The Ubuntu postgres
+		# package requires that the postgres user is also part of the
+		# postgres group. Again, for consistency, we create the postgres
+		# group with a pre-determined GID, which the same as the
+		# postgres UID. Note that we put this code here instead of the
+		# delphix-platform service as we need it to be executed before
+		# the postgres package gets installed.
+		addgroup postgres --gid 65437
+		adduser --home /var/lib/postgresql --no-create-home \
+			--shell /bin/bash --ingroup postgres \
+			--gecos "PostgreSQL administrator" --uid 65437 \
+			--disabled-password postgres
+	elif [[ $(id -u postgres) -ne 65437 ]]; then
+		echo "ERROR: postgres id $(id -u postgres) != 65437" >&2
+		exit 1
+	fi
 	;;
 esac
 

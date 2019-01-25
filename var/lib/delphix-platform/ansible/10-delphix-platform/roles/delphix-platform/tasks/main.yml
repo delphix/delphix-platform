@@ -28,6 +28,7 @@
 
 - user:
     name: delphix
+    uid: 65433
     group: staff
     groups: root
     shell: /bin/bash
