@@ -14,9 +14,11 @@
 # limitations under the License.
 #
 
+ALL_PLATFORMS := aws azure esx gcp kvm
+
 #
 # The version field defaults to a timestamp. Note that it can be
-# overridden by running: make package VERSION="<custom version>"
+# overridden by running: make packages VERSION="<custom version>"
 #
 VERSION := $(shell date '+%Y.%m.%d.%H')
 
@@ -28,27 +30,28 @@ VERSION := $(shell date '+%Y.%m.%d.%H')
 
 check: shellcheck shfmtcheck
 
-package:
+packages: $(addprefix package-,$(ALL_PLATFORMS))
+
+package-%:
 	@rm -f debian/changelog
 	dch --create --package delphix-platform -v $(VERSION) \
 			"Automatically generated changelog entry."
-	dpkg-buildpackage -us
-	@for ext in dsc tar.xz; do \
+	sed "s/@@TARGET_PLATFORM@@/$*/" debian/control.in >debian/control
+	TARGET_PLATFORM=$* dpkg-buildpackage -us
+	@for ext in buildinfo changes dsc tar.xz; do \
 		mv -v ../delphix-platform_*.$$ext artifacts; \
 	done
+	@mv -v ../delphix-platform-$*_*_amd64.deb artifacts
 
-	@for ext in buildinfo changes deb; do \
-		mv -v ../delphix-platform_*_amd64.$$ext artifacts; \
-	done
+SHELL_SCRIPTS := \
+	debian/postinst \
+	debian/prerm \
+	usr/bin/download-latest-image \
+	usr/bin/unpack-image \
+	var/lib/delphix-platform/ansible/apply
 
 shellcheck:
-	shellcheck \
-		usr/bin/download-latest-image \
-		usr/bin/unpack-image \
-		var/lib/delphix-platform/ansible/apply
+	shellcheck $(SHELL_SCRIPTS)
 
 shfmtcheck:
-	! shfmt -d \
-		usr/bin/download-latest-image \
-		usr/bin/unpack-image \
-		var/lib/delphix-platform/ansible/apply | grep .
+	! shfmt -d $(SHELL_SCRIPTS) | grep .
