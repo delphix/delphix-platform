@@ -86,6 +86,7 @@ DEPENDS += bpfcc-tools, \
 	   dnsutils, \
 	   dstat, \
 	   emacs-nox, \
+	   ethtool, \
 	   gdb, \
 	   glances, \
 	   htop, \
@@ -100,6 +101,7 @@ DEPENDS += bpfcc-tools, \
 	   manpages-dev, \
 	   memstat, \
 	   ncdu, \
+	   pciutils, \
 	   procinfo, \
 	   psmisc, \
 	   pv, \
