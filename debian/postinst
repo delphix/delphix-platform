@@ -21,6 +21,13 @@ configure)
 	systemctl enable delphix-platform.service
 	systemctl enable systemd-networkd.service
 
+	#
+	# We restart the ssh service as a stop-gap solution
+	# for DLPX-62465. We should rethink how to handle
+	# the application of sshd_config.
+	#
+	systemctl restart ssh
+
 	if ! id -u postgres >/dev/null; then
 		# When installing postgres, a postgres user is created unless it
 		# already exists. To have a consistent UID accross installations
