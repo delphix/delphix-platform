@@ -55,6 +55,7 @@
 #
 - command: zpool list -Hpo size rpool
   register: rpool_size_bytes
+  when: not ansible_is_chroot
 
 #
 # We want to store crash dumps on a specific dataset for a couple
