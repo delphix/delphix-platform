@@ -27,7 +27,7 @@ function find_playbooks() {
 		-mindepth 2 \
 		-name playbook.yml | sort -n; then
 		echo "Failure when finding playbooks." 2>&1
-		exit 1
+		return 1
 	fi
 
 	#
@@ -36,13 +36,12 @@ function find_playbooks() {
 	# old directory. Once all consumers can be updated to install
 	# into the new directory, we can remove this logic.
 	#
-	if ! find "/etc/delphix-platform/ansible" \
+	find "/etc/delphix-platform/ansible" \
 		-maxdepth 2 \
 		-mindepth 2 \
-		-name playbook.yml | sort -n; then
-		echo "Failure when finding playbooks." 2>&1
-		exit 1
-	fi
+		-name playbook.yml | sort -n
+
+	return 0
 }
 
 function apply_playbook() {
@@ -106,7 +105,8 @@ if [[ "$(find_playbooks | wc -l)" -eq "0" ]]; then
 	exit 1
 fi
 
-find_playbooks | while read -r playbook; do
+playbooks=$(find_playbooks) || exit 1
+for playbook in $playbooks; do
 	apply_playbook "$playbook"
 done
 
