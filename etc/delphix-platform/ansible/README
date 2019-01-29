@@ -1,6 +1,0 @@
-This file is temporarily maintained for backwards compatibility of
-programs that will attempt to install ansible configuration into this
-directory. Originally, /etc/delphix-platform/ansible was the directory
-used for storing ansible configuration consumed by the delphix-platform
-service, but this has since moved to /var/lib/delphix-platform to better
-comply with the Filesystem Hierarchy Standard (FHS).
