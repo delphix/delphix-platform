@@ -80,7 +80,8 @@ DEPENDS += $(DEPENDS.$(TARGET_PLATFORM))
 # product should not rely on them programmatically. They may be updated
 # or replaced without regard for backward compatibility.
 #
-DEPENDS += bpftrace, \
+DEPENDS += bcc-tools, \
+	   bpftrace, \
 	   crash, \
 	   dnsutils, \
 	   dstat, \
