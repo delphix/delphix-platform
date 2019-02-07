@@ -104,6 +104,7 @@ DEPENDS += bcc-tools, \
 	   pciutils, \
 	   procinfo, \
 	   psmisc, \
+	   ptools, \
 	   pv, \
 	   screen, \
 	   sg3-utils, \
