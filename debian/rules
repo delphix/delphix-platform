@@ -45,6 +45,7 @@ DEPENDS += grub-pc, \
 #
 DEPENDS += ansible, \
 	   auditd, \
+	   bcc-tools, \
 	   cloud-init, \
 	   debootstrap, \
 	   debsums, \
@@ -80,8 +81,7 @@ DEPENDS += $(DEPENDS.$(TARGET_PLATFORM))
 # product should not rely on them programmatically. They may be updated
 # or replaced without regard for backward compatibility.
 #
-DEPENDS += bcc-tools, \
-	   bpftrace, \
+DEPENDS += bpftrace, \
 	   crash, \
 	   dnsutils, \
 	   dstat, \
