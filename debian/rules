@@ -61,11 +61,16 @@ DEPENDS += ansible, \
 DEPENDS += ubuntu-dbgsym-keyring,
 
 #
-# This package contains a consolidation for third-party packages built
-# by delphix as well as build info for all packages built by the linux-pkg
-# framework.
+# This package provides the build information for all packages built by
+# the linux-pkg framework.
 #
 DEPENDS += delphix-extra,
+
+#
+# The following packages provide additional set of packages that are
+# common part of the Delphix platform.
+#
+DEPENDS += td-agent,
 
 # Platform-specific dependencies
 DEPENDS.aws =
