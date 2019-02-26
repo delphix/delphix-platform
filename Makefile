@@ -36,6 +36,9 @@ package-%:
 	@rm -f debian/changelog
 	dch --create --package delphix-platform -v $(VERSION) \
 			"Automatically generated changelog entry."
+	sed "s/@@TARGET_PLATFORM@@/$*/" \
+		var/lib/delphix-appliance/platform.in \
+		>var/lib/delphix-appliance/platform
 	sed "s/@@TARGET_PLATFORM@@/$*/" debian/control.in >debian/control
 	TARGET_PLATFORM=$* dpkg-buildpackage -us
 	@for ext in buildinfo changes dsc tar.xz; do \
