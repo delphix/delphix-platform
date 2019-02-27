@@ -51,7 +51,8 @@ SHELL_SCRIPTS := \
 	debian/prerm \
 	usr/bin/download-latest-image \
 	usr/bin/unpack-image \
-	var/lib/delphix-platform/ansible/apply
+	var/lib/delphix-platform/ansible/apply \
+	var/lib/delphix-platform/os-migration
 
 shellcheck:
 	shellcheck $(SHELL_SCRIPTS)
