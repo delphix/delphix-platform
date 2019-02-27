@@ -1,4 +1,6 @@
 etc/
 lib/
 usr/
-var/
+var/lib/delphix-appliance/platform
+var/lib/delphix-platform/
+var/target

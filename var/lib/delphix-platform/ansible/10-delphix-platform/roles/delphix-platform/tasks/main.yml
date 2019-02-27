@@ -138,7 +138,7 @@
 # setsid since all ExecuteUtils.execute wrap each call with setsid.
 #
 - lineinfile:
-    dest: /etc/audit/auditd.conf
+    path: /etc/audit/auditd.conf
     regexp: "{{ item.regex }}"
     line: "{{ item.line }}"
   with_items:
@@ -167,7 +167,7 @@
 #
 - lineinfile:
     create: yes
-    dest: /etc/security/limits.conf
+    path: /etc/security/limits.conf
     line: "{{ item }} soft core unlimited"
   with_items:
     - 'root'
@@ -240,8 +240,51 @@
     recurse: yes
 
 - lineinfile:
-    dest: /etc/environment
+    path: /etc/environment
     regexp: '^{{ item.key }}='
     line: '{{ item.key }}="{{ item.value }}"'
   with_items:
     - { key: 'JAVA_HOME', value: '/usr/lib/jvm/oracle-java8-jdk-amd64' }
+
+#
+# Configure the Azure agent. Only run this on Azure, since that is the
+# only platform that has the Azure agent installed.
+#
+- lineinfile:
+    path: /etc/waagent.conf
+    regexp: '^{{ item.key }}='
+    line: '{{ item.key }}={{ item.value }}'
+  with_items:
+    #
+    # We use cloud-init rather than the Azure agent to handle any
+    # provisioning logic that we need.
+    #
+    - { key: 'Provisioning.Enabled', value: 'n' }
+    #
+    # Even though we do use cloud-init to handle some provisioning
+    # tasks, we should tell the Azure agent that we don't. Otherwise,
+    # the Azure agent will wait for cloud-init to complete before
+    # reporting back to Azure that the VM is running. The way it detects
+    # that cloud-init has finished is by waiting for cloud-init to copy
+    # a certain file (ovf-env.xml) into /var/lib/waagent/, but
+    # cloud-init won't copy this file unless it has been configured to
+    # read Azure userdata (as determined by the 'datasource_list'
+    # parameter). We do not allow the appliance to read userdata from
+    # any source, at least on the external variant, with the result that
+    # the agent waits 20+ minutes before timing out and finally
+    # reporting the VM as running.
+    #
+    - { key: 'Provisioning.UseCloudInit', value: 'n' }
+    #
+    # Prevent customers from running arbitrary code on the engine via
+    # extensions when they deploy.
+    #
+    - { key: 'Extensions.Enabled', value: 'n' }
+    #
+    # This controls auto-updating of the extension handler (not the
+    # provisioning handler or daemon). It seems safer to disable this
+    # rather than to allow Microsoft to push new code to our engines,
+    # especially since we aren't using any extensions.
+    #
+    - { key: 'AutoUpdate.Enabled', value: 'n' }
+  when: platform == "azure"

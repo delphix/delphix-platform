@@ -21,6 +21,13 @@ SOURCE_DIRECTORY="$(readlink -f "${BASH_SOURCE%/*}")"
 DLPX_ANSIBLE_DIRECTORY="${DLPX_ANSIBLE_DIRECTORY:-$SOURCE_DIRECTORY}"
 ROOT_FILESYSTEM=$(zfs list -Ho name /)
 
+#
+# If we are running as part of live-build, the root of the appliance's
+# filesystem won't be /
+#
+APPLIANCE_ROOT_DIR="$SOURCE_DIRECTORY/../../../.."
+PLATFORM=$(cat "$APPLIANCE_ROOT_DIR/var/lib/delphix-appliance/platform")
+
 function find_playbooks() {
 	if ! find "$DLPX_ANSIBLE_DIRECTORY" \
 		-maxdepth 2 \
@@ -36,6 +43,7 @@ function apply_playbook() {
 		-c "$DLPX_ANSIBLE_CONNECTION" \
 		-i "$DLPX_ANSIBLE_INVENTORY" \
 		-e "root_filesystem=${ROOT_FILESYSTEM}" \
+		-e "platform=$PLATFORM" \
 		"$1"; then
 		echo "Failure when applying playbook." 2>&1
 		exit 1
