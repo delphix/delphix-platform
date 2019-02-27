@@ -1,0 +1,50 @@
+#
+# Copyright 2019 Delphix
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+#
+# We want to execute this service as early as possible since it will be
+# finalizing the network configuration after an OS migration. Since it will
+# also be importing domain0, which is normally imported by the
+# zfs-import-cache service, we add similar dependencies to it
+# (i.e. devices must be ready, so run after systemd-udev-settle.service, and
+# service is required by zfs-import.target). Finally, we must make sure to
+# remove default service dependencies, as those would create a dependency
+# cycle (this service must run before local-fs.target, but default
+# dependencies require local-fs.target). Note that the zfs-import.target
+# dependency means that this service will run before local-fs.target, and so
+# before any other Delphix service.
+#
+[Unit]
+Description=Delphix OS Migration Service
+DefaultDependencies=no
+After=systemd-udev-settle.service
+Before=network-pre.target
+Before=zfs-import.target
+
+[Service]
+Type=oneshot
+ExecStart=/var/lib/delphix-platform/os-migration
+RemainAfterExit=yes
+
+#
+# Disable the service once it has run.
+# Even though the service does nothing when the flag file is not there,
+# disabling it has the advantage of simplifying systemd dependencies.
+#
+ExecStartPost=/bin/systemctl disable delphix-migration.service
+
+[Install]
+WantedBy=default.target

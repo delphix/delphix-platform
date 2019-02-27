@@ -1,0 +1,49 @@
+#!/bin/bash
+#
+# Copyright 2019 Delphix
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+MIGRATE_CONFIG_SCRIPT="/opt/delphix/migration/migrate_config.py"
+MIGRATE_CONFIG_LOG="/var/delphix/migration/log"
+
+# The perform-migration flag file is created by dx_execute prior rebooting into
+# Linux.
+PERFORM_MIGRATION="/var/delphix/migration/perform-migration"
+
+function die() {
+	echo "$(basename "$0"): $*" >&2
+	exit 1
+}
+
+function perform_migration() {
+	zpool import -f domain0 || die "Failed to import domain0"
+	# domain0/mds is owned by delphix:staff on Illumos, and on Linux
+	# postgres can't access this dataset anymore. We change the permissions
+	# to the Linux defaults.
+	chown postgres:postgres /mds ||
+		die "Failed chowning /mds"
+	echo "$(date): Running migrate_config post-upgrade" \
+		>>"$MIGRATE_CONFIG_LOG"
+	"$MIGRATE_CONFIG_SCRIPT" post-upgrade >>"$MIGRATE_CONFIG_LOG" ||
+		die "Failed migrate_config post-upgrade"
+	rm "$PERFORM_MIGRATION" || die "Failed to remove $PERFORM_MIGRATION"
+}
+
+if [[ -f "$PERFORM_MIGRATION" ]]; then
+	echo "File $PERFORM_MIGRATION exists. Performing OS migration ..."
+	perform_migration
+else
+	echo "File $PERFORM_MIGRATION missing. Nothing to do."
+fi
