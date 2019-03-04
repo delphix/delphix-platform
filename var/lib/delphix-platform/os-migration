@@ -28,6 +28,19 @@ function die() {
 }
 
 function perform_migration() {
+	#
+	# On Illumos rpool/crashdump has its mountpoint set to "legacy",
+	# and we mount it manually. On Linux we want it to be mounted
+	# automatically by setting its mountpoint property.
+	# During migration this would be done by the delphix-platform service
+	# on first boot however that fails since the kdump-tools service
+	# creates a file under /var/crash before the delphix-platform can be
+	# run. To mitigate this problem we set the mountpoint here, as we
+	# run before kdump-tools.
+	#
+	zfs set mountpoint=/var/crash rpool/crashdump ||
+		die "Failed to set mountpoint for rpool/crashdump"
+
 	zpool import -f domain0 || die "Failed to import domain0"
 	# domain0/mds is owned by delphix:staff on Illumos, and on Linux
 	# postgres can't access this dataset anymore. We change the permissions
