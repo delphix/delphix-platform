@@ -166,6 +166,14 @@
       -a exit,always -F a0!=0 -S exit
 
 #
+# Prevent auditd output from being duplicated into the journal. The size
+# of the journal is limited and the high volume of messages from auditd
+# would end up causing important messages from less verbose services to
+# be flushed and lost prematurely.
+#
+- shell: systemctl mask systemd-journald-audit.socket
+
+#
 # By default, the ulimit for core files is set to 0, and the default
 # filename and location for a core file is 'core' in the cwd. Update
 # limits.conf to allow processes running as root or a regular user to
