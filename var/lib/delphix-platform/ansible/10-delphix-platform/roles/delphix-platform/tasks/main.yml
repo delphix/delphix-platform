@@ -302,3 +302,39 @@
     #
     - { key: 'AutoUpdate.Enabled', value: 'n' }
   when: platform == "azure"
+
+#
+# Customize the GCP linux environment.
+#
+# Update the override file for the GCP instance. This file gets
+# applied dynamically by running google_instance_setup script.
+#
+- blockinfile:
+    path: /etc/default/instance_configs.cfg.template
+    create: yes
+    block: |
+      #
+      # Disable the accounts daemon to prevent adding/removing
+      # users on the engine.
+      #
+      [Daemons]
+      accounts_daemon = false
+
+      #
+      # Disable user supplied startup/shutdown scripts from running on
+      # the engine.
+      #
+      [MetadataScripts]
+      shutdown = false
+      startup = false
+  when:
+    - platform == "gcp"
+  notify: "gcp config changed"
+
+#
+# Make sure that the account daemon is always disabled. The override file
+# above should prevent this and this is designed to catch any corner cases.
+#
+- command: systemctl disable google-accounts-daemon.service
+  when:
+    - platform == "gcp"
