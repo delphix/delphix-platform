@@ -71,7 +71,8 @@ DEPENDS += delphix-extra,
 DEPENDS.aws =
 DEPENDS.azure = walinuxagent,
 DEPENDS.esx = open-vm-tools,
-DEPENDS.gcp =
+DEPENDS.gcp = gce-compute-image-packages, python-google-compute-engine, \
+	   python3-google-compute-engine,
 DEPENDS.kvm =
 DEPENDS += $(DEPENDS.$(TARGET_PLATFORM))
 
