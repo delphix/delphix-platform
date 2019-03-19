@@ -60,13 +60,6 @@ DEPENDS += ansible, \
 #
 DEPENDS += ubuntu-dbgsym-keyring,
 
-#
-# This package contains a consolidation for third-party packages built
-# by delphix as well as build info for all packages built by the linux-pkg
-# framework.
-#
-DEPENDS += delphix-extra,
-
 # Platform-specific dependencies
 DEPENDS.aws =
 DEPENDS.azure = walinuxagent,
