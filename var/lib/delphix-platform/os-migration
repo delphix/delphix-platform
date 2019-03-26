@@ -41,11 +41,14 @@ function perform_migration() {
 	zfs set mountpoint=/var/crash rpool/crashdump ||
 		die "Failed to set mountpoint for rpool/crashdump"
 
+	chown -R root:root /var/delphix/server ||
+		die "Failed to chown /var/delphix/server"
+
 	zpool import -f domain0 || die "Failed to import domain0"
 	# domain0/mds is owned by delphix:staff on Illumos, and on Linux
 	# postgres can't access this dataset anymore. We change the permissions
 	# to the Linux defaults.
-	chown postgres:postgres /mds ||
+	chown -R postgres:postgres /mds ||
 		die "Failed chowning /mds"
 	echo "$(date): Running migrate_config post-upgrade" \
 		>>"$MIGRATE_CONFIG_LOG"
