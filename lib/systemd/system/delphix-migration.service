@@ -20,17 +20,22 @@
 # also be importing domain0, which is normally imported by the
 # zfs-import-cache service, we add similar dependencies to it
 # (i.e. devices must be ready, so run after systemd-udev-settle.service, and
-# service is required by zfs-import.target). Finally, we must make sure to
-# remove default service dependencies, as those would create a dependency
-# cycle (this service must run before local-fs.target, but default
-# dependencies require local-fs.target). Note that the zfs-import.target
-# dependency means that this service will run before local-fs.target, and so
-# before any other Delphix service.
+# service is required by zfs-import.target). The service needs to access
+# files in /var/delphix so we add a dependency on the /var/delphix mountpoint.
+# Note that /var/delphix comes from the root pool, which is imported on boot,
+# so this dependency doesn't conflict with the zfs-import.target.
+#
+# Finally, we must make sure to remove default service dependencies, as
+# those would create a dependency cycle (this service must run before
+# local-fs.target, but default dependencies require local-fs.target). Note
+# that the zfs-import.target dependency means that this service will run
+# before local-fs.target, and so before any other Delphix service.
 #
 [Unit]
 Description=Delphix OS Migration Service
 DefaultDependencies=no
 After=systemd-udev-settle.service
+After=var-delphix.mount
 Before=network-pre.target
 Before=zfs-import.target
 
