@@ -258,7 +258,7 @@
     regexp: '^{{ item.key }}='
     line: '{{ item.key }}="{{ item.value }}"'
   with_items:
-    - { key: 'JAVA_HOME', value: '/usr/lib/jvm/oracle-java8-jdk-amd64' }
+    - { key: 'JAVA_HOME', value: '/usr/lib/jvm/adoptopenjdk-java8-jdk-amd64' }
 
 #
 # Configure the Azure agent. Only run this on Azure, since that is the
