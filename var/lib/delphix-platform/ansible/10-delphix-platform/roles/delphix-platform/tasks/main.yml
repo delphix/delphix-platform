@@ -205,6 +205,15 @@
     - { key: "AllowStreamLocalForwarding", value: "no" }
     - { key: "AllowTcpForwarding", value: "no" }
     - { key: "X11Forwarding", value: "no" }
+    #
+    # The CRA project mandated a 30 minute timeout for any idle connections.
+    # By enabling an inactivity timeout we ensure that idle connections are
+    # closed. Thus any sessions that are accidentally left opened at a
+    # customer site will timeout preventing customers from gaining access
+    # to our engine.
+    #
+    - { key: "ClientAliveInterval", value: "1800" }
+    - { key: "ClientAliveCountMax", value: "0" }
 
 #
 # Harden the appliance by disabling SFTP.
