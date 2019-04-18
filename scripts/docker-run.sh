@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2018 Delphix
+# Copyright 2018, 2019 Delphix
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -45,6 +45,8 @@ $DOCKER_RUN --rm \
 	--volume /dev:/dev \
 	--env AWS_ACCESS_KEY_ID \
 	--env AWS_SECRET_ACCESS_KEY \
+	--env DELPHIX_SIGNATURE_URL \
+	--env DELPHIX_SIGNATURE_TOKEN \
 	--volume "$TOP:/opt/delphix-platform" \
 	--workdir "/opt/delphix-platform" \
 	delphix-platform "$@"

@@ -1,5 +1,5 @@
 #
-# Copyright 2018 Delphix
+# Copyright 2018, 2019 Delphix
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -34,16 +34,25 @@ packages: $(addprefix package-,$(ALL_PLATFORMS))
 
 package-%:
 	@rm -f debian/changelog
+
 	dch --create --package delphix-platform -v $(VERSION) \
 			"Automatically generated changelog entry."
+
 	sed "s/@@TARGET_PLATFORM@@/$*/" \
 		var/lib/delphix-appliance/platform.in \
 		>var/lib/delphix-appliance/platform
+
+	./scripts/download-signature-key.sh upgrade 5.3 \
+		>var/lib/delphix-appliance/key-public.pem.upgrade.5.3
+
 	sed "s/@@TARGET_PLATFORM@@/$*/" debian/control.in >debian/control
+
 	TARGET_PLATFORM=$* dpkg-buildpackage -us
+
 	@for ext in buildinfo changes dsc tar.xz; do \
 		mv -v ../delphix-platform_*.$$ext artifacts; \
 	done
+
 	@mv -v ../delphix-platform-$*_*_amd64.deb artifacts
 
 SHELL_SCRIPTS := \

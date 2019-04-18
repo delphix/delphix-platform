@@ -1,6 +1,7 @@
 etc/
 lib/
 usr/
+var/lib/delphix-appliance/key-public.pem.upgrade.5.3
 var/lib/delphix-appliance/platform
 var/lib/delphix-platform/
 var/target

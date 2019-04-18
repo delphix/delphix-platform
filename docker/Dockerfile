@@ -29,14 +29,16 @@ RUN \
   apt-add-repository -y ppa:ansible/ansible && \
   apt-get update && \
   apt-get install -y \
+      curl \
       debhelper \
       devscripts \
       dpkg-dev \
+      jq \
       make \
       shellcheck \
       wget && \
   rm -rf /var/lib/apt/lists/*
 
 RUN wget -nv -O /usr/local/bin/shfmt \
- https://github.com/mvdan/sh/releases/download/v2.4.0/shfmt_v2.4.0_linux_amd64 && \
- chmod +x /usr/local/bin/shfmt
+  https://github.com/mvdan/sh/releases/download/v2.4.0/shfmt_v2.4.0_linux_amd64 && \
+  chmod +x /usr/local/bin/shfmt

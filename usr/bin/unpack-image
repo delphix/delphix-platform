@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2018 Delphix
+# Copyright 2018, 2019 Delphix
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ function die() {
 
 function usage() {
 	echo "$(basename "$0"): $*" >&2
-	echo "Usage: $(basename "$0") [-f] <image>"
+	echo "Usage: $(basename "$0") [-f] [-s] <image>"
 	exit 2
 }
 
@@ -36,10 +36,25 @@ function cleanup() {
 	[[ -d "$UNPACK_DIR" ]] && rm -rf "$UNPACK_DIR"
 }
 
+#
+# This option will "force" unpack the image, which will cause the image
+# currently being unpacked to overwrite any previously unpacked image of
+# the same version. Otherwise, this will fail if there's already an
+# unpacked image of the same version.
+#
 opt_f=false
-while getopts ':f' c; do
+
+#
+# This option will skip the signature verification portion of this
+# script. Generally this should not be used, as the signature is used to
+# ensure the image hasn't been modified, but it can be useful for
+# development and/or testing purposes.
+#
+opt_s=false
+
+while getopts ':fs' c; do
 	case "$c" in
-	f) eval "opt_$c=true" ;;
+	f | s) eval "opt_$c=true" ;;
 	*) usage "illegal option -- $OPTARG" ;;
 	esac
 done
@@ -51,33 +66,54 @@ shift $((OPTIND - 1))
 [[ "$EUID" -ne 0 ]] && die "must be run as root"
 [[ -d "$UPDATE_DIR" ]] || die "$UPDATE_DIR does not exist"
 
-report_progress_inc 10 "Extracting upgrade image."
-
 case "$1" in
 *.upgrade.tar.gz) ;;
 *) die "The upgrade image must be a '.upgrade.tar.gz' file" ;;
 esac
 
+UPGRADE_IMAGE_PATH="$(readlink -f "$1")"
+[[ -n "$UPGRADE_IMAGE_PATH" ]] || die "unable to determine upgrade image path"
+
 trap cleanup EXIT
 UNPACK_DIR=$(mktemp -d -p "$UPDATE_DIR" -t unpack.XXXXXXX)
-[[ -d "$UNPACK_DIR" ]] || die "failed to create unpack directory"
+[[ -d "$UNPACK_DIR" ]] || die "failed to create unpack directory '$UNPACK_DIR'"
+pushd "$UNPACK_DIR" &>/dev/null || die "'pushd $UNPACK_DIR' failed"
 
-(
-	cd "$UNPACK_DIR"
-	tar -xzf -
-) <"$1" ||
-	die "failed to extract upgrade image '$1'"
+report_progress_inc 10 "Extracting upgrade image."
+
+tar -xzf "$UPGRADE_IMAGE_PATH" ||
+	die "failed to extract upgrade image '$UPGRADE_IMAGE_PATH'"
 
 report_progress_inc 40 "Verifying format."
 
-[[ -f "$UNPACK_DIR/version.info" ]] || die "the upgrade image is corrupt"
+for file in SHA256SUMS payload.tar.gz version.info; do
+	[[ -f "$file" ]] || die "image is corrupt; missing '$file' file"
+done
+
+if ! $opt_s; then
+	openssl dgst -sha256 \
+		-verify /var/lib/delphix-appliance/key-public.pem.upgrade.5.3 \
+		-signature SHA256SUMS.sig.5.3 \
+		SHA256SUMS >/dev/null ||
+		die "image is corrupt; verification of 'SHA256SUMS' file," \
+			"using signature 'SHA256SUMS.sig.5.3'" \
+			"and key 'key-public.pem.upgrade.5.3' failed"
+fi
+
+sha256sum -c SHA256SUMS >/dev/null ||
+	die "image is corrupt; checksums don't match"
+
+tar -xzf payload.tar.gz || die "failed to extract payload.tar.gz"
+rm payload.tar.gz || die "failed to remove payload.tar.gz"
 
 #
 # We need to be careful when sourcing this file, since it can conflict
 # with (and clobber) functions and/or variables previously defined.
 #
-# shellcheck disable=SC1090
-. "$UNPACK_DIR/version.info"
+# shellcheck disable=SC1091
+. version.info
+
+popd &>/dev/null || die "'popd' failed"
 
 [[ -n "$VERSION" ]] || die "VERSION variable is empty"
 [[ -n "$MINIMUM_VERSION" ]] || die "MINIMUM_VERSION variable is empty"
