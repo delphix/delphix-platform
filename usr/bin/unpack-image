@@ -24,7 +24,7 @@ function die() {
 
 function usage() {
 	echo "$(basename "$0"): $*" >&2
-	echo "Usage: $(basename "$0") [-f] [-s] <image>"
+	echo "Usage: $(basename "$0") [-f] [-s] [-x] <image>"
 	exit 2
 }
 
@@ -52,9 +52,19 @@ opt_f=false
 #
 opt_s=false
 
-while getopts ':fs' c; do
+#
+# This option will cause this script to modify the "version.info" file,
+# setting the "MINIMUM_REBOOT_OPTIONAL_VERSION" field to be equal to the
+# "VERSION" field. This way, when an upgrade is performed using this
+# unpacked upgrade image, it'll result in a "not-in-place" upgrade when
+# perhaps this otherwise would not have occurred; this is mostly useful
+# for internal testing of the "not-in-place" upgrade code paths.
+#
+opt_x=false
+
+while getopts ':fsx' c; do
 	case "$c" in
-	f | s) eval "opt_$c=true" ;;
+	f | s | x) eval "opt_$c=true" ;;
 	*) usage "illegal option -- $OPTARG" ;;
 	esac
 done
@@ -111,14 +121,24 @@ rm payload.tar.gz || die "failed to remove payload.tar.gz"
 # with (and clobber) functions and/or variables previously defined.
 #
 # shellcheck disable=SC1091
-. version.info
-
-popd &>/dev/null || die "'popd' failed"
+. version.info || die "sourcing version.info file failed"
 
 [[ -n "$VERSION" ]] || die "VERSION variable is empty"
 [[ -n "$MINIMUM_VERSION" ]] || die "MINIMUM_VERSION variable is empty"
 [[ -n "$MINIMUM_REBOOT_OPTIONAL_VERSION" ]] ||
 	die "MINIMUM_REBOOT_OPTIONAL_VERSION variable is empty"
+
+if $opt_x; then
+	sed -i \
+		"s/^\(MINIMUM_REBOOT_OPTIONAL_VERSION\)=.*$/\1=$VERSION/" \
+		version.info ||
+		die "'sed -i ... version.info' failed"
+
+	# shellcheck disable=SC1091
+	. version.info || die "sourcing version.info file failed"
+fi
+
+popd &>/dev/null || die "'popd' failed"
 
 $opt_f && rm -rf "${UPDATE_DIR:?}/$VERSION" >/dev/null 2>&1
 
