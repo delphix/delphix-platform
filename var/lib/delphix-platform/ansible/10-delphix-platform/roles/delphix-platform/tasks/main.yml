@@ -304,6 +304,20 @@
   when: platform == "azure"
 
 #
+# Supply the default engine parameters
+#
+- lineinfile:
+    path: /opt/delphix/server/etc/delphix_config_override.properties.template
+    regexp: '^{{ item.key }}='
+    line: '{{ item.key }}={{ item.value }}'
+  with_items:
+    #
+    # Enable device initialization by default on all platforms except for Azure
+    #
+    - { key: 'ENABLED_FEATURES', value: 'STORAGEDEVICEINITIALIZE' }
+  when: platform != "azure"
+
+#
 # Customize the GCP linux environment.
 #
 # Update the override file for the GCP instance. This file gets
