@@ -17,6 +17,14 @@
 
 case $1 in
 configure)
+	systemctl disable apt-daily.service
+	systemctl disable apt-daily.timer
+
+	systemctl disable apt-daily-upgrade.service
+	systemctl disable apt-daily-upgrade.timer
+
+	systemctl disable unattended-upgrades.service
+
 	systemctl enable auditd.service
 	systemctl enable delphix-migration.service
 	systemctl enable delphix-platform.service
