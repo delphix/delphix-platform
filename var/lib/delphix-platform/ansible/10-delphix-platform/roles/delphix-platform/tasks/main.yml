@@ -81,7 +81,7 @@
       canmount: on
       compression: on
       mountpoint: /var/crash
-      quota: "{{ rpool_size_bytes.stdout|int / 4 }}"
+      quota: "{{ rpool_size_bytes.stdout|int / 2 }}"
   when: not ansible_is_chroot
 
 #
