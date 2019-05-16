@@ -91,7 +91,7 @@ DEPENDS += bcc-tools, \
 	   dstat, \
 	   emacs-nox, \
 	   ethtool, \
-	   gdb-python, \
+	   gdb, \
 	   glances, \
 	   htop, \
 	   iftop, \
@@ -99,7 +99,6 @@ DEPENDS += bcc-tools, \
 	   iotop, \
 	   jq, \
 	   kdump-tools, \
-	   libkdumpfile, \
 	   lsof, \
 	   man-db, \
 	   manpages, \
