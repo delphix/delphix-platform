@@ -1,0 +1,30 @@
+#
+# Copyright 2018 Delphix
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+#
+# By default, systemd creates multiple .device units for each block device on
+# the system: one for the device file in /dev/, one for sysfs representation of
+# the device, and one for each of the udev-created symlinks to the device. If
+# the device is partitioned, each of these units is also created for each of the
+# partitions. For us, creating a zvol typically triggers the creation of 12
+# .device units. On larger engines, we can easily hit systemd's hard limit of
+# 128K units on a system, at which point systemd stops functioning.
+#
+# We can work around this by preventing udev from notifying systemd about the
+# existence of zvols, so that systemd doesn't generate .device units for them.
+# We don't use these auto-generated units anyway.
+#
+SUBSYSTEM=="block", KERNEL=="zd*", TAG-="systemd"
