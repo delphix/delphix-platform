@@ -30,6 +30,54 @@ function die() {
 	exit 1
 }
 
+function warn() {
+	echo "$(basename "$0"): $*" >&2
+}
+
+function set_bootfs_mounted_cleanup() {
+	umount "/mnt" || warn "'umount' of '/mnt' failed" >&2
+}
+
+#
+# This function has been copied from the delphix/appliance-build repo's
+# "rootfs-container" script. When doing a migration type of upgrade, we
+# will not have that script available, so we've opted to copy this
+# function from that script, so it can still be used to update the
+# Delphix appliance's bootloader after a migration has completed.
+#
+function set_bootfs_mounted() {
+	trap set_bootfs_mounted_cleanup EXIT
+
+	#
+	# Since this function assumes the rootfs container is mounted,
+	# we verify that it's mounted as the root filesystem; otherwise
+	# the logic below will fail.
+	#
+	MOUNTPOINT=$(zfs get mountpoint -Hpo value "rpool/ROOT/$CONTAINER/root")
+	[[ "$MOUNTPOINT" == "/" ]] ||
+		die "incorrect mountpoint for '$CONTAINER' root: '$MOUNTPOINT'"
+
+	mount -t zfs rpool/grub "/mnt" ||
+		die "'mount -t zfs rpool/grub' failed for '$CONTAINER'"
+
+	for dev in $(get_bootloader_devices); do
+		[[ -e "/dev/$dev" ]] ||
+			die "bootloader device '/dev/$dev' not found"
+
+		[[ -b "/dev/$dev" ]] ||
+			die "bootloader device '/dev/$dev' not block device"
+
+		grub-install --root-directory=/mnt "/dev/$dev" ||
+			die "'grub-install' for '$dev' failed in '$CONTAINER'"
+	done
+
+	grub-mkconfig -o /mnt/boot/grub/grub.cfg ||
+		die "'grub-mkconfig' failed in '$CONTAINER'"
+
+	set_bootfs_mounted_cleanup
+	trap - EXIT
+}
+
 function perform_migration() {
 	#
 	# On Illumos rpool/crashdump has its mountpoint set to "legacy",
@@ -69,6 +117,18 @@ function perform_migration() {
 		die "Failed migrate_config post-upgrade, see" \
 			"$MIGRATE_CONFIG_LOG"
 	rm "$PERFORM_MIGRATION" || die "Failed to remove $PERFORM_MIGRATION"
+
+	if ! zfs list "rpool/grub" &>/dev/null; then
+		zfs create \
+			-o compression=on \
+			-o mountpoint=legacy \
+			rpool/grub
+	fi
+
+	CONTAINER="$(basename "$(dirname "$(zfs list -Hpo name)")")"
+	[[ -n "$CONTAINER" ]] ||
+		die "failed to determine mounted rootfs container name"
+	set_bootfs_mounted
 }
 
 if [[ -f "$PERFORM_MIGRATION" ]]; then
