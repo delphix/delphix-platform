@@ -318,3 +318,38 @@
 - command: systemctl disable google-accounts-daemon.service
   when:
     - platform == "gcp"
+
+#
+# We want the ssh service to start as early as possible during boot up,
+# so we explicitly remove all dependencies of the service here. We've
+# configured the service not to use the "default" dependencies, via the
+# "override.conf" file in the delphix-platform package. Unfortuantely
+# though, we can't remove any dependencies specified using "After=" in
+# the original SSH service file, by using that same "override.conf"
+# file. Thus, to remove the "After=" dependencies, we have to create a
+# completely new unit definition for the SSH service, that will override
+# the original unit definition; Systemd allows us to use files in
+# "/etc/systemd" to replace files in "/lib/systemd".
+#
+# So, the strategy here is to copy the original unit definition from
+# "/lib/systemd" (the file is provided by the SSH package) to
+# "/etc/systemd", and then modify the copy to remove the "After=" line.
+# This way, if the original unit definitation is changed on upgrade,
+# we'll automatically use the new file from the new package; but we'll
+# still be able to modify the file to remove the "After=" dependencies.
+# Additionally, we don't modify the file in "/lib/systemd" directly, so
+# that we don't break "debsums -c", and it's easy to "revert" our
+# changes by simply removing our copy in "/etc/systemd".
+#
+- copy:
+    remote_src: yes
+    src: /lib/systemd/system/ssh.service
+    dest: /etc/systemd/system/ssh.service
+    owner: root
+    group: root
+    mode: 0644
+
+- lineinfile:
+    path: /etc/systemd/system/ssh.service
+    regexp: "^After="
+    state: absent
