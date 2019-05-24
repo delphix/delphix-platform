@@ -353,3 +353,18 @@
     path: /etc/systemd/system/ssh.service
     regexp: "^After="
     state: absent
+
+#
+# In addition to removing the SSH service dependencies (done above), we
+# also want to disable pam_nologin. Otherwise, SSH will come up quickly,
+# but we won't be able to log in immediately, due to pam_nologin.
+#
+- lineinfile:
+    dest: '/etc/pam.d/{{ item }}'
+    regexp: '^#?(.*)(pam_nologin.so)(.*)$'
+    line: '#\1\2\3'
+    backrefs: yes
+    state: present
+  with_items:
+    - login
+    - sshd
