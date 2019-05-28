@@ -87,6 +87,7 @@ DEPENDS += $(DEPENDS.$(TARGET_PLATFORM))
 DEPENDS += bcc-tools, \
 	   bpftrace, \
 	   crash, \
+	   crash-python, \
 	   dnsutils, \
 	   drgn, \
 	   dstat, \
