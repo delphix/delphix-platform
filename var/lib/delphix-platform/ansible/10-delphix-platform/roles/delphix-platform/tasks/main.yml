@@ -69,18 +69,15 @@
   when: not ansible_is_chroot
 
 #
-# We want to store crash dumps on a specific dataset for a couple
-# reasons. First, this keeps it relatively unversioned, compared to the
-# root dataset (which may be cloned on upgrade). Second, we want to
-# enforce a quota to ensure its contents can't run rpool out of space.
+# Reconfigure the crashdump dataset. The initial configuration was performed
+# by appliance build so we only update the configuration here. In particular,
+# we want to enforce a quota to ensure its contents can't run rpool out
+# of space.
 #
 - zfs:
     name: rpool/crashdump
     state: present
     extra_zfs_properties:
-      canmount: on
-      compression: on
-      mountpoint: /var/crash
       quota: "{{ rpool_size_bytes.stdout|int / 2 }}"
   when: not ansible_is_chroot
 
