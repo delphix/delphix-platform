@@ -242,23 +242,6 @@
     regexp: '^(mibs\s+:\s+)'
     replace: '#\1'
 
-#
-# During upgrade verification (using the "verify" upgrade script), we'll
-# use this "dropbox" directory to bind mount into the verification
-# container, such that software running in that container can use this
-# directory to communicate results of the verification back to the host.
-#
-# This path is also found in "common.sh" of the "upgrade-scripts", as
-# well as other Delphix repositories. Thus, we need to be careful when
-# changing this, as we may also need to update these other places where
-# this path is referenced.
-#
-- file:
-    path: /var/delphix/dropbox
-    state: directory
-    mode: 0755
-    recurse: yes
-
 - lineinfile:
     path: /etc/environment
     regexp: '^{{ item.key }}='
