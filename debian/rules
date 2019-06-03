@@ -128,6 +128,36 @@ DEPENDS += bcc-tools, \
 %:
 	dh $@
 
+override_dh_install:
+	#
+	# All the files that we want to include in this package have to
+	# be copied into debian/tmp. debian/tmp is a special directory
+	# which is cleaned up automatically when dpkg-buildpackage is run.
+	# Also, when --auto-dest is passed to dh_install, "debian/tmp" is
+	# stripped from the destination path.
+	#
+	mkdir -p debian/tmp
+
+	#
+	# Each platform's package contains the commond set of files in
+	# files/common as well as the platform-specific files in
+	# files/PLATFORM.
+	#
+	cp -r files/common/* debian/tmp/
+	if [ -d files/$(TARGET_PLATFORM)/ ]; then \
+		cp -r files/$(TARGET_PLATFORM)/* debian/tmp/; \
+	fi
+
+	sed "s/@@TARGET_PLATFORM@@/$(TARGET_PLATFORM)/" \
+		debian/tmp/var/lib/delphix-appliance/platform.in \
+		>debian/tmp/var/lib/delphix-appliance/platform
+	rm debian/tmp/var/lib/delphix-appliance/platform.in
+
+	./scripts/download-signature-key.sh upgrade 5.3 \
+		debian/tmp/var/lib/delphix-appliance/key-public.pem.upgrade.5.3
+
+	dh_install --autodest "debian/tmp/*"
+
 override_dh_gencontrol:
 	dh_gencontrol -- -Vdelphix:Depends="$(DEPENDS)"
 
