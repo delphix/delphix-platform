@@ -55,16 +55,8 @@ package-%:
 
 	@mv -v ../delphix-platform-$*_*_amd64.deb artifacts
 
-SHELL_SCRIPTS := \
-	debian/postinst \
-	debian/prerm \
-	usr/bin/download-latest-image \
-	usr/bin/unpack-image \
-	var/lib/delphix-platform/ansible/apply \
-	var/lib/delphix-platform/os-migration
-
 shellcheck:
-	shellcheck $(SHELL_SCRIPTS)
+	shellcheck $$(shfmt -f .)
 
 shfmtcheck:
-	! shfmt -d $(SHELL_SCRIPTS) | grep .
+	shfmt -d .
