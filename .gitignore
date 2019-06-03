@@ -16,8 +16,8 @@
 
 debian/*.debhelper
 debian/changelog
+debian/control
 debian/debhelper-build-stamp
-debian/delphix-platform.debhelper.log
-debian/delphix-platform.substvars
-debian/delphix-platform
+debian/delphix-platform-*
 debian/files
+debian/tmp
