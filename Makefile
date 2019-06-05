@@ -38,13 +38,6 @@ package-%:
 	dch --create --package delphix-platform -v $(VERSION) \
 			"Automatically generated changelog entry."
 
-	sed "s/@@TARGET_PLATFORM@@/$*/" \
-		var/lib/delphix-appliance/platform.in \
-		>var/lib/delphix-appliance/platform
-
-	./scripts/download-signature-key.sh upgrade 5.3 \
-		>var/lib/delphix-appliance/key-public.pem.upgrade.5.3
-
 	sed "s/@@TARGET_PLATFORM@@/$*/" debian/control.in >debian/control
 
 	TARGET_PLATFORM=$* dpkg-buildpackage -us
@@ -55,16 +48,8 @@ package-%:
 
 	@mv -v ../delphix-platform-$*_*_amd64.deb artifacts
 
-SHELL_SCRIPTS := \
-	debian/postinst \
-	debian/prerm \
-	usr/bin/download-latest-image \
-	usr/bin/unpack-image \
-	var/lib/delphix-platform/ansible/apply \
-	var/lib/delphix-platform/os-migration
-
 shellcheck:
-	shellcheck $(SHELL_SCRIPTS)
+	shellcheck $$(shfmt -f .)
 
 shfmtcheck:
-	! shfmt -d $(SHELL_SCRIPTS) | grep .
+	shfmt -d .
