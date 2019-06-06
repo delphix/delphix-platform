@@ -51,6 +51,7 @@ DEPENDS += ansible, \
 	   net-tools, \
 	   openssh-server, \
 	   openssl, \
+	   policykit-1, \
 	   rng-tools, \
 	   systemd-container, \
 	   ubuntu-minimal,
