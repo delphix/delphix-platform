@@ -31,19 +31,6 @@ function die() {
 }
 
 function perform_migration() {
-	#
-	# On Illumos rpool/crashdump has its mountpoint set to "legacy",
-	# and we mount it manually. On Linux we want it to be mounted
-	# automatically by setting its mountpoint property.
-	# During migration this would be done by the delphix-platform service
-	# on first boot however that fails since the kdump-tools service
-	# creates a file under /var/crash before the delphix-platform can be
-	# run. To mitigate this problem we set the mountpoint here, as we
-	# run before kdump-tools.
-	#
-	zfs set mountpoint=/var/crash rpool/crashdump ||
-		die "Failed to set mountpoint for rpool/crashdump"
-
 	chown -R root:root /var/delphix/server ||
 		die "Failed to chown /var/delphix/server"
 
