@@ -34,6 +34,13 @@ function perform_migration() {
 	chown -R root:root /var/delphix/server ||
 		die "Failed to chown /var/delphix/server"
 
+	if [[ -d /var/delphix/dmsuite ]]; then
+		mv -T /var/delphix/dmsuite /var/delphix/masking ||
+			die "Failed to move masking data directory"
+		chown -R masking:staff /var/delphix/masking ||
+			die "Failed to chown masking data directory"
+	fi
+
 	#
 	# In most cases, use the devices' by-id links to import domain0. This ensures
 	# persistent vdev names which can tolerate device reordering. AWS does not
