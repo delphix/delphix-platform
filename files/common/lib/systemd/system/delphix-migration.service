@@ -33,6 +33,7 @@
 #
 [Unit]
 Description=Delphix OS Migration Service
+PartOf=delphix.target
 DefaultDependencies=no
 After=systemd-udev-settle.service
 After=var-delphix.mount
@@ -52,4 +53,4 @@ RemainAfterExit=yes
 ExecStartPost=/bin/systemctl disable delphix-migration.service
 
 [Install]
-WantedBy=default.target
+WantedBy=delphix.target

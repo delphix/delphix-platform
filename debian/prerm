@@ -25,6 +25,7 @@ upgrade | remove)
 	# so we can't reliably restore the system back to that prior state.
 	#
 
+	systemctl disable delphix.target
 	systemctl disable delphix-migration.service
 	systemctl disable delphix-platform.service
 
