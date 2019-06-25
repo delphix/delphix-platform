@@ -16,6 +16,7 @@
 
 [Unit]
 Description=Delphix Appliance Platform Service
+PartOf=delphix.target
 After=local-fs.target
 Before=rsync.service
 
@@ -41,4 +42,4 @@ Environment=DLPX_ANSIBLE_CONNECTION=local
 Environment=DLPX_ANSIBLE_INVENTORY=localhost,
 
 [Install]
-WantedBy=default.target
+WantedBy=delphix.target
