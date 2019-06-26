@@ -49,8 +49,10 @@ RemainAfterExit=yes
 # Disable the service once it has run.
 # Even though the service does nothing when the flag file is not there,
 # disabling it has the advantage of simplifying systemd dependencies.
+# We have seen that reloading systemd can impact other services, like
+# mounting local filesystems. We use the "no-reload" flag to prevent this.
 #
-ExecStartPost=/bin/systemctl disable delphix-migration.service
+ExecStartPost=/bin/systemctl disable --no-reload delphix-migration.service
 
 [Install]
 WantedBy=delphix.target
