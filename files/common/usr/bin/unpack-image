@@ -42,7 +42,7 @@ function cleanup() {
 # the same version. Otherwise, this will fail if there's already an
 # unpacked image of the same version.
 #
-opt_f=false
+opt_f=""
 
 #
 # This option will skip the signature verification portion of this
@@ -50,7 +50,7 @@ opt_f=false
 # ensure the image hasn't been modified, but it can be useful for
 # development and/or testing purposes.
 #
-opt_s=false
+opt_s=""
 
 #
 # This option will cause this script to modify the "version.info" file,
@@ -60,7 +60,7 @@ opt_s=false
 # perhaps this otherwise would not have occurred; this is mostly useful
 # for internal testing of the "not-in-place" upgrade code paths.
 #
-opt_x=false
+opt_x=""
 
 while getopts ':fsx' c; do
 	case "$c" in
@@ -85,6 +85,7 @@ UPGRADE_IMAGE_PATH="$(readlink -f "$1")"
 [[ -n "$UPGRADE_IMAGE_PATH" ]] || die "unable to determine upgrade image path"
 
 trap cleanup EXIT
+
 UNPACK_DIR=$(mktemp -d -p "$UPDATE_DIR" -t unpack.XXXXXXX)
 [[ -d "$UNPACK_DIR" ]] || die "failed to create unpack directory '$UNPACK_DIR'"
 pushd "$UNPACK_DIR" &>/dev/null || die "'pushd $UNPACK_DIR' failed"
@@ -96,11 +97,11 @@ tar -xzf "$UPGRADE_IMAGE_PATH" ||
 
 report_progress_inc 40 "Verifying format."
 
-for file in SHA256SUMS payload.tar.gz version.info; do
+for file in SHA256SUMS prepare; do
 	[[ -f "$file" ]] || die "image is corrupt; missing '$file' file"
 done
 
-if ! $opt_s; then
+if [[ -z "$opt_s" ]]; then
 	openssl dgst -sha256 \
 		-verify /var/lib/delphix-appliance/key-public.pem.upgrade.5.3 \
 		-signature SHA256SUMS.sig.5.3 \
@@ -113,42 +114,12 @@ fi
 sha256sum -c SHA256SUMS >/dev/null ||
 	die "image is corrupt; checksums don't match"
 
-tar -xzf payload.tar.gz || die "failed to extract payload.tar.gz"
-rm payload.tar.gz || die "failed to remove payload.tar.gz"
-
-#
-# We need to be careful when sourcing this file, since it can conflict
-# with (and clobber) functions and/or variables previously defined.
-#
-# shellcheck disable=SC1091
-. version.info || die "sourcing version.info file failed"
-
-[[ -n "$VERSION" ]] || die "VERSION variable is empty"
-[[ -n "$MINIMUM_VERSION" ]] || die "MINIMUM_VERSION variable is empty"
-[[ -n "$MINIMUM_REBOOT_OPTIONAL_VERSION" ]] ||
-	die "MINIMUM_REBOOT_OPTIONAL_VERSION variable is empty"
-
-if $opt_x; then
-	sed -i \
-		"s/^\\(MINIMUM_REBOOT_OPTIONAL_VERSION\\)=.*$/\\1=$VERSION/" \
-		version.info ||
-		die "'sed -i ... version.info' failed"
-
-	# shellcheck disable=SC1091
-	. version.info || die "sourcing version.info file failed"
-fi
-
 popd &>/dev/null || die "'popd' failed"
 
-$opt_f && rm -rf "${UPDATE_DIR:?}/$VERSION" >/dev/null 2>&1
+report_progress_inc 50 "Handoff unpack to prepare script."
 
-[[ -d "$UPDATE_DIR/$VERSION" ]] && die "version $VERSION already exists"
-
-mv "$UNPACK_DIR" "$UPDATE_DIR/$VERSION" ||
-	die "failed to move unpacked upgrade image to $UPDATE_DIR/$VERSION"
-
-rm -f "$UPDATE_DIR/latest" || die "failed to remove 'latest' symlink"
-ln -s "$VERSION" "$UPDATE_DIR/latest" || die "failed to create 'latest' symlink"
+"$UNPACK_DIR"/prepare ${opt_f:+"-f"} ${opt_s:+"-s"} ${opt_x:+"-x"} "$UNPACK_DIR" ||
+	die "'prepare' hand-off failed"
 
 report_progress_inc 100 "Unpacking successful."
 
