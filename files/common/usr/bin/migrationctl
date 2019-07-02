@@ -1,0 +1,297 @@
+#!/usr/bin/python3
+#
+# Copyright 2019 Delphix
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+import argparse
+import os
+import sys
+
+import sh
+
+class Color:
+    RED = '\x1b[31m'
+    GREEN = '\x1b[32m'
+    YELLOW = '\x1b[33m'
+    RESET = '\x1b[0m'
+
+    @staticmethod
+    def allow_colors():
+        return sys.stdout.isatty()
+
+    @staticmethod
+    def colorize(text, color):
+        if Color.allow_colors():
+            return color + text + Color.RESET
+        return text
+
+    @staticmethod
+    def red(text):
+        return Color.colorize(text, Color.RED)
+
+    @staticmethod
+    def green(text):
+        return Color.colorize(text, Color.GREEN)
+
+    @staticmethod
+    def yellow(text):
+        return Color.colorize(text, Color.YELLOW)
+
+    @staticmethod
+    def normal(text):
+        return text
+
+class Service:
+    NAME_HEADER_LEN = 40
+
+    def __init__(self, name):
+        self.name = name
+        self.state = None
+        self.refresh()
+
+    @staticmethod
+    def print_header():
+        print('%-*s %s' % (Service.NAME_HEADER_LEN, 'SERVICE', 'STATE'))
+
+    def __str__(self):
+        return self.name
+
+    def refresh(self):
+        self.state = sh.systemctl('show', '--no-page', '--value', '-p',
+                                  'ActiveState', self.name).strip()
+
+
+    def _command(self, command):
+        try:
+            sh.systemctl(command, self.name)
+            self.refresh()
+            return True
+        except sh.ErrorReturnCode:
+            return False
+
+    def start(self):
+        started = self._command('start')
+        if started and self.state != 'active':
+            warning('Service %s start succeeded but state is %s'
+                    % (self.name, self.state))
+            return False
+
+        return started
+
+    def stop(self):
+        return self._command('stop')
+
+    def restart(self):
+        return self._command('restart')
+
+    def enable(self):
+        return self._command('enable')
+
+    def disable(self):
+        return self._command('disable')
+
+    def is_active(self):
+        return self.state == 'active'
+
+    def is_inactive(self):
+        return self.state == 'inactive'
+
+    def is_failed(self):
+        return self.state == 'failed'
+
+    def is_activating(self):
+        return self.state == 'activating'
+
+    def is_deactivating(self):
+        return self.state == 'deactivating'
+
+    def pretty_print_state(self):
+        STATES = {
+            'active': Color.green,
+            'inactive': Color.normal,
+            'activating': Color.yellow,
+            'deactivating': Color.yellow,
+            'failed': Color.red
+        }
+
+        colorize = STATES.get(self.state, Color.red)
+        print('%-*s %s' % (Service.NAME_HEADER_LEN, self.name,
+                           colorize(self.state)))
+
+class Migration:
+    PERFORM_MIGRATION = '/var/delphix/migration/perform-migration'
+    MIGRATION_CHECK_DIR = '/var/delphix/migration/illumos-config'
+
+    def __init__(self):
+        Migration.system_check()
+
+        self.svc_migration = Service('delphix-migration.service')
+        self.svc_iscsi = Service('rtslib-fb-targetctl.service')
+        self.svc_platform = Service('delphix-platform.service')
+        self.svc_postgres = Service('delphix-postgres@default.service')
+        self.svc_mgmt = Service('delphix-mgmt.service')
+
+        self.services = [
+            self.svc_migration,
+            self.svc_iscsi,
+            self.svc_platform,
+            self.svc_postgres,
+            self.svc_mgmt
+        ]
+
+    @staticmethod
+    def system_check():
+        if not os.path.exists(Migration.MIGRATION_CHECK_DIR):
+            print('Directory %s missing' % Migration.MIGRATION_CHECK_DIR)
+            error("System doesn't come from Illumos")
+            sys.exit(1)
+
+    def check_if_reboot_after_migration(self):
+        #
+        # After a successful run of delphix-migration, the service is
+        # disabled, so it will be inactive on reboot.
+        #
+        if self.svc_migration.is_inactive() and \
+                not os.path.exists(Migration.PERFORM_MIGRATION):
+            return True
+        return False
+
+    def status(self):
+        if self.check_if_reboot_after_migration():
+            print('System rebooted after a successful run of %s.'
+                  % self.svc_migration)
+            sys.exit(0)
+
+        Service.print_header()
+        for service in self.services:
+            service.pretty_print_state()
+        print()
+
+        for service in self.services:
+            if service.is_failed():
+                print('Service %s has failed.' % service)
+                print('Run "sudo journalctl -u %s" to find out more.' % service)
+                break
+            elif service.is_inactive():
+                print('Service %s is inactive.' % service)
+                print('Some of its dependencies may be unmet.')
+                print('You can attempt to resume migration with '
+                      '"sudo %s resume"' % sys.argv[0])
+                break
+            elif service.is_activating() or service.is_deactivating():
+                print('Migration is in progress, please wait.')
+                break
+
+        for service in self.services:
+            if not service.is_active():
+                break
+        else:
+            print(Color.green('Migration was successful.'))
+
+    def resume(self):
+        if self.check_if_reboot_after_migration():
+            print('System rebooted after a successful run of %s.'
+                  % self.svc_migration)
+            sys.exit(0)
+
+        if self.svc_migration.is_active():
+            if os.path.exists(Migration.PERFORM_MIGRATION):
+                warning('%s file exists despite migration service running'
+                        % Migration.PERFORM_MIGRATION)
+                os.remove(Migration.PERFORM_MIGRATION)
+                print('Removed file %s' % Migration.PERFORM_MIGRATION)
+        else:
+            #
+            # delphix-migration.service is automatically disabled after each
+            # run. We re-enable it to make sure its RequireBy dependencies from
+            # the [Install] section are honored. This is not strictly required
+            # as there are additional checks to make sure those services don't
+            # run if delphix-migration failed, but makes for cleaner dependencies.
+            #
+            if self.svc_migration.enable():
+                success('Service %s enabled' % self.svc_migration)
+            else:
+                warning('Failed to enable %s' % self.svc_migration)
+
+        for service in self.services:
+            if not run_service(service):
+                sys.exit(1)
+
+        success('Migration completed')
+
+def error(text):
+    print(Color.red('Error: ' + text))
+
+def warning(text):
+    print(Color.yellow('Warning: ' + text))
+
+def success(text):
+    print(Color.green('Success: ' + text))
+
+def assert_root():
+    if os.geteuid() != 0:
+        error('Command must be run as root.')
+        sys.exit(1)
+
+def run_service(service):
+    if service.is_active():
+        print('Service %s is already running' % service)
+        return True
+
+    print('Starting %s ...' % service)
+    started = service.start()
+    if started:
+        success('Service %s started' % service)
+    else:
+        error('Service %s failed to start' % service)
+        print('Run "sudo journalctl -u %s" to find out more' % service)
+
+    return started
+
+def migration_status():
+    migration = Migration()
+    migration.status()
+
+def migration_resume():
+    assert_root()
+    migration = Migration()
+    migration.resume()
+
+def main():
+    cli_parser = argparse.ArgumentParser()
+    subparsers = cli_parser.add_subparsers(
+        dest='command',
+        help='Command description'
+    )
+
+    sp = subparsers.add_parser(
+        'status',
+        help='Show migration status.'
+    )
+    sp.set_defaults(func=migration_status)
+
+    sp = subparsers.add_parser(
+        'resume',
+        help='Resume a failed migration.'
+    )
+    sp.set_defaults(func=migration_resume)
+
+    args = cli_parser.parse_args()
+    if hasattr(args, 'func'):
+        args.func()
+    else:
+        cli_parser.print_usage()
+
+main()

@@ -39,6 +39,21 @@ After=systemd-udev-settle.service
 After=var-delphix.mount
 Before=network-pre.target
 Before=zfs-import.target
+#
+# If migration failed after domain0 was imported, we want to make sure
+# that on reboot this service won't race with zfs-import-cache.service
+# which will also try to import domain0.
+#
+Before=zfs-import-cache.service
+
+#
+# When the delphix-migration service is restarted manually following a
+# failure, we need to ensure that it is run before services that depend
+# on it.
+#
+Before=rtslib-fb-targetctl.service
+Before=delphix-platform.service
+Before=delphix-postgres@default.service
 
 [Service]
 Type=oneshot
@@ -46,7 +61,7 @@ ExecStart=/var/lib/delphix-platform/os-migration
 RemainAfterExit=yes
 
 #
-# Disable the service once it has run.
+# Disable the service once it has run succesfully.
 # Even though the service does nothing when the flag file is not there,
 # disabling it has the advantage of simplifying systemd dependencies.
 # We have seen that reloading systemd can impact other services, like
@@ -56,3 +71,12 @@ ExecStartPost=/bin/systemctl disable --no-reload delphix-migration.service
 
 [Install]
 WantedBy=delphix.target
+
+#
+# By Setting RequiredBy dependencies in the Install section, this enforces
+# those dependencies only when the delphix-migration service is enabled. If
+# the delphix-migration service is disabled, those dependencies are removed.
+#
+RequiredBy=rtslib-fb-targetctl.service
+RequiredBy=delphix-platform.service
+RequiredBy=delphix-postgres@default.service

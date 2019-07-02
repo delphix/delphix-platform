@@ -20,8 +20,8 @@ MIGRATE_CONFIG_LOG="/var/delphix/migration/log"
 PG_REINDEX=/var/delphix/server/db/force-reindex
 
 #
-# The perform-migration flag file is created by dx_execute prior rebooting into
-# Linux.
+# The perform-migration flag file is created by dx_execute prior rebooting
+# into Linux.
 #
 PERFORM_MIGRATION="/var/delphix/migration/perform-migration"
 
@@ -30,36 +30,57 @@ function die() {
 	exit 1
 }
 
+#
+# Perform first-boot migration steps.
+# This function must be idempotent. If some of the steps fail, we must
+# be able to manually fix the problem, then re-run the migration service
+# to resume the upgrade.
+#
 function perform_migration() {
+	echo "chown -R /var/delphix/server"
 	chown -R root:root /var/delphix/server ||
 		die "Failed to chown /var/delphix/server"
 
 	if [[ -d /var/delphix/dmsuite ]]; then
+		echo "moving /var/delphix/dmsuite to /var/delphix/masking"
 		mv -T /var/delphix/dmsuite /var/delphix/masking ||
 			die "Failed to move masking data directory"
+	else
+		echo "note: /var/delphix/dmsuite doesn't exist"
+	fi
+
+	if [[ -d /var/delphix/masking ]]; then
+		echo "chown -R /var/delphix/masking"
 		chown -R masking:staff /var/delphix/masking ||
 			die "Failed to chown masking data directory"
 	fi
 
-	#
-	# In most cases, use the devices' by-id links to import domain0. This ensures
-	# persistent vdev names which can tolerate device reordering. AWS does not
-	# provide a by-id link, so we use simple device names (i.e. /dev/xvda)
-	#
-
-	BY_ID_LINK="/dev/disk/by-id"
-	if [[ -d "$BY_ID_LINK" ]]; then
-		zpool import -f -d $BY_ID_LINK domain0 ||
-			die "Failed to import domain0 by-id"
+	if zpool list domain0 >/dev/null 2>&1; then
+		echo "note: domain0 is already imported"
 	else
-		zpool import -f domain0 || die "Failed to import domain0"
+		echo "importing domain0"
+		#
+		# In most cases, use the devices' by-id links to import
+		# domain0. This ensures persistent vdev names which can
+		# tolerate device reordering. AWS does not provide a by-id
+		# link, so we use simple device names (i.e. /dev/xvda)
+		#
+		BY_ID_LINK="/dev/disk/by-id"
+		if [[ -d "$BY_ID_LINK" ]]; then
+			zpool import -f -d $BY_ID_LINK domain0 ||
+				die "Failed to import domain0 by-id"
+		else
+			zpool import -f domain0 ||
+				die "Failed to import domain0"
+		fi
 	fi
 
 	#
 	# domain0/mds is owned by delphix:staff on Illumos, and on Linux
-	# postgres can't access this dataset anymore. We change the permissions
-	# to the Linux defaults.
+	# postgres can't access this dataset anymore. We change the
+	# permissions to the Linux defaults.
 	#
+	echo "chown -R /mds"
 	chown -R postgres:postgres /mds ||
 		die "Failed chowning /mds"
 
@@ -81,6 +102,7 @@ function perform_migration() {
 if [[ -f "$PERFORM_MIGRATION" ]]; then
 	echo "File $PERFORM_MIGRATION exists. Performing OS migration ..."
 	perform_migration
+	echo "OS migration completed"
 else
 	echo "File $PERFORM_MIGRATION missing. Nothing to do."
 fi
