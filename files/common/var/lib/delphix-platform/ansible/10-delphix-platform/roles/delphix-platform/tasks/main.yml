@@ -368,3 +368,26 @@
   with_items:
     - login
     - sshd
+
+#
+# The Delphix platform supports running as an NFSv4-only server, which
+# means that the services used by NFSv3 can be disabled (masked).
+# Unfortunately, the nfs-server unit contains a Requires dependency on
+# the nfs-mountd.service, preventing the nfs-mountd.service from being
+# masked without also preventing the nfs-server from starting. We
+# change this dependency to a Wants dependency so that if the service is
+# enabled, it will be available for NFSv3 configurations, but it can be
+# disabled for NFSv4 configurations.
+#
+- copy:
+    remote_src: yes
+    src: /lib/systemd/system/nfs-server.service
+    dest: /etc/systemd/system/nfs-server.service
+    owner: root
+    group: root
+    mode: 0644
+
+- replace:
+    path: /etc/systemd/system/nfs-server.service
+    regexp: '^Requires(=nfs-mountd.service)$'
+    replace: 'Wants\1'
