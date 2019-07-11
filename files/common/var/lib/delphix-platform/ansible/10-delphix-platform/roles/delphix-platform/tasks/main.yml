@@ -193,15 +193,41 @@
     - { key: "AllowStreamLocalForwarding", value: "no" }
     - { key: "AllowTcpForwarding", value: "no" }
     - { key: "X11Forwarding", value: "no" }
-    #
-    # The CRA project mandated a 30 minute timeout for any idle connections.
-    # By enabling an inactivity timeout we ensure that idle connections are
-    # closed. Thus any sessions that are accidentally left opened at a
-    # customer site will timeout preventing customers from gaining access
-    # to our engine.
-    #
+
+#
+# The CRA project mandated a 30 minute timeout for any idle connections.
+# By enabling an inactivity timeout we ensure that idle connections are
+# closed. Thus any sessions that are accidentally left opened at a
+# customer site will timeout preventing customers from gaining access to
+# our engine.
+#
+- lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: "^#?{{ item.key }} "
+    line: "{{ item.key }} {{ item.value }}"
+  with_items:
     - { key: "ClientAliveInterval", value: "1800" }
     - { key: "ClientAliveCountMax", value: "0" }
+  when:
+    #
+    # For developer convenience, we disable the CRA mandated timeout for
+    # the following internal appliance variants. None of the variants
+    # listed here should be provided to customers, so these don't need
+    # to have the same SSH timeout. Further, the idle timeout can be a
+    # burden when we need to run long running processes over SSH on our
+    # internal systems (e.g. for development, testing, etc).
+    #
+    # Additionally, we explicitly do not list the "internal-qa" variant
+    # here. Even though that variant is not provided to customers (i.e.
+    # it doesn't have to adhere to the CRA mandate either), we want that
+    # variant to match our external variants as closely as possible.
+    # Thus, since we use this timeout for external variants, we use this
+    # timeout for the "internal-qa" variant.
+    #
+    - variant != "internal-dev"
+    - variant != "internal-dcenter"
+    - variant != "internal-minimal"
+    - variant != "internal-unittest"
 
 #
 # Harden the appliance by disabling SFTP.
