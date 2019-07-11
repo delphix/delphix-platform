@@ -27,6 +27,7 @@ ROOT_FILESYSTEM=$(zfs list -Ho name /)
 #
 APPLIANCE_ROOT_DIR="$SOURCE_DIRECTORY/../../../.."
 PLATFORM=$(cat "$APPLIANCE_ROOT_DIR/var/lib/delphix-appliance/platform")
+VARIANT=$(cat "$APPLIANCE_ROOT_DIR/usr/share/doc/delphix-entire-$PLATFORM/variant")
 
 function find_playbooks() {
 	if ! find "$DLPX_ANSIBLE_DIRECTORY" \
@@ -42,8 +43,9 @@ function apply_playbook() {
 	if ! ansible-playbook -vvv \
 		-c "$DLPX_ANSIBLE_CONNECTION" \
 		-i "$DLPX_ANSIBLE_INVENTORY" \
-		-e "root_filesystem=${ROOT_FILESYSTEM}" \
+		-e "root_filesystem=$ROOT_FILESYSTEM" \
 		-e "platform=$PLATFORM" \
+		-e "variant=$VARIANT" \
 		"$1"; then
 		echo "Failure when applying playbook." 2>&1
 		exit 1
