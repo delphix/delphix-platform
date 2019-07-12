@@ -77,6 +77,11 @@ DEPENDS += python3-sh, \
 DEPENDS += delphix-buildinfo-userland,
 DEPENDS += delphix-buildinfo-kernel,
 
+#
+# The CRA PAM module provides an authentication method for the delphix user.
+#
+DEPENDS += pam-challenge-response,
+
 # Platform-specific dependencies
 DEPENDS.aws =
 DEPENDS.azure = walinuxagent,
