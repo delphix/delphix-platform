@@ -394,3 +394,10 @@
   with_items:
     - login
     - sshd
+
+#
+# Enable CRA for external variants
+#
+- command: pam-auth-update --enable challenge-response
+  when:
+    - variant is regex("external-.*")
