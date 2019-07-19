@@ -85,6 +85,27 @@ function perform_migration() {
 		die "Failed chowning /mds"
 
 	#
+	# For each domain0 dataset with a default mountpoint,
+	# the parents need other-execute for NFSv4 exports.
+	#
+	echo "Fixing mountpoint permissions for domain0 datasets"
+	DATASETS=$(zfs list -H -r -t filesystem -o mountpoint domain0 |
+		grep ^/domain0/ | xargs dirname | sort | uniq)
+
+	for DATASET in $DATASETS; do
+		if [[ "$DATASET" == "/domain0" ]]; then
+			continue
+		fi
+		PERMS=$(stat "$DATASET" -c %a 2>/dev/null)
+		RETURN=$?
+		if [[ $RETURN -eq 0 && "$PERMS" == "750" ]]; then
+			echo "chmod o+x $DATASET"
+			chmod o+x "$DATASET" ||
+				die "Failed chmod o+x $DATASET"
+		fi
+	done
+
+	#
 	# DLPX-63949: Postgres must be re-indexed after migration.
 	# See dx_pg_post_start.sh for more info.
 	#
