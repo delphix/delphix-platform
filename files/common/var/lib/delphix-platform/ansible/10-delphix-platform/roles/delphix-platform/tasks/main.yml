@@ -396,6 +396,31 @@
     - sshd
 
 #
+# On Xen, block devices, including cdroms, are named with the scheme /dev/xvdX.
+# Thus, the udev rules for cdroms are written to match devices with that naming
+# scheme. These rules cause 'cdrom_id' to run, and when it does, it opens the
+# device with the O_EXCL flag. On rare occasions, 'zpool create' will be
+# attempting to label the same device at the same time. 'zpool' also uses O_EXCL
+# when it tries to open the device, so its attempt will fail with EBUSY.
+#
+# This removes 'xvd*' from the list of matching names in 60-cdrom_id.rules by
+# overriding the original version of the file in /lib/ with a modified one in
+# /etc/.
+#
+- copy:
+    remote_src: yes
+    src: /lib/udev/rules.d/60-cdrom_id.rules
+    dest: /etc/udev/rules.d/60-cdrom_id.rules
+    owner: root
+    group: root
+    mode: 0644
+- lineinfile:
+    path: /etc/udev/rules.d/60-cdrom_id.rules
+    backrefs: yes
+    regexp: '(.*)\|xvd\*(.*)'
+    line: '\1\2'
+
+#
 # Enable CRA for external variants
 #
 - command: pam-auth-update --enable challenge-response
