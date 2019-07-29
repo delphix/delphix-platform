@@ -63,10 +63,22 @@ function perform_migration() {
 		# In most cases, use the devices' by-id links to import
 		# domain0. This ensures persistent vdev names which can
 		# tolerate device reordering. AWS does not provide a by-id
-		# link, so we use simple device names (i.e. /dev/xvda)
+		# link, so we use simple device names (i.e. /dev/xvda). On
+		# Azure, however, we use the Azure-specific links, because the
+		# by-id links can change when the device is resized.
 		#
 		BY_ID_LINK="/dev/disk/by-id"
-		if [[ -d "$BY_ID_LINK" ]]; then
+		AZURE_LINK="/dev/disk/azure"
+		if [[ -d "$AZURE_LINK" ]]; then
+			dir_array=()
+			while read -r dir; do
+				dir_array+=(-d)
+				dir_array+=("$dir")
+			done < <(find "$AZURE_LINK" -maxdepth 1 -name "scsi*")
+			echo "zpool import -f ${dir_array[*]} domain0"
+			zpool import -f "${dir_array[@]}" domain0 ||
+				die "Failed to import domain0 by azure link"
+		elif [[ -d "$BY_ID_LINK" ]]; then
 			zpool import -f -d $BY_ID_LINK domain0 ||
 				die "Failed to import domain0 by-id"
 		else
