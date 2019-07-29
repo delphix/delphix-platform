@@ -118,6 +118,14 @@ function perform_migration() {
 	done
 
 	#
+	# Wait on zvol dev links to be ready.
+	# This must be done after we import domain0 and before we attempt
+	# to start the rtslib-fb-targetctl service, which depends on the
+	# current service.
+	#
+	zvol_wait || die "Failed waiting on zvol dev links."
+
+	#
 	# DLPX-63949: Postgres must be re-indexed after migration.
 	# See dx_pg_post_start.sh for more info.
 	#
