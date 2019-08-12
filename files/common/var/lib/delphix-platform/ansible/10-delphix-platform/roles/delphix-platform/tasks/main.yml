@@ -126,6 +126,25 @@
   when: not ansible_is_chroot
 
 #
+# Create the directory and ZFS dataset that we'll use to store upgrade
+# related logs (that need to be shared across versions). This directory is
+# used  part of upgrade verify and rollback process to share log files to
+# older version. Thus, we need to be careful if/when changing this, as we'll
+# need to coordinate the change with the appliance-build upgrade-scripts.
+#
+- file:
+    path: /var/tmp/delphix-upgrade
+    state: directory
+
+- zfs:
+    name: rpool/upgrade-logs
+    state: present
+    extra_zfs_properties:
+      mountpoint: /var/tmp/delphix-upgrade
+      compression: gzip
+  when: not ansible_is_chroot
+
+#
 # Configure command audit logging
 #
 # We want to record all commands executed on the appliance. Opt out for
