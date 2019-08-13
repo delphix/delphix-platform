@@ -21,3 +21,7 @@ debian/debhelper-build-stamp
 debian/delphix-platform-*
 debian/files
 debian/tmp
+
+#IntelliJ IDEA adds the below files
+delphix-platform.iml
+.idea/
