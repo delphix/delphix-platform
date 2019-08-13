@@ -14,7 +14,7 @@
 #
 versions=$(cat /proc/fs/nfsd/versions)
 if [[ "$versions" == "-2 -3 -4 -4.0 -4.1 -4.2" ]]; then
-	printf "+4\n" >/proc/fs/nfsd/versions
+	printf "+4\\n" >/proc/fs/nfsd/versions
 	echo "Initializing the NFS server version"
 fi
 
