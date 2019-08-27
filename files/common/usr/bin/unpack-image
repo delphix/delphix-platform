@@ -24,7 +24,7 @@ function die() {
 
 function usage() {
 	echo "$(basename "$0"): $*" >&2
-	echo "Usage: $(basename "$0") [-f] [-s] [-x] <image>"
+	echo "Usage: $(basename "$0") [-f] [-s] [-x] <image> <tmp_dir>"
 	exit 2
 }
 
@@ -62,43 +62,54 @@ opt_s=""
 #
 opt_x=""
 
-while getopts ':fsx' c; do
+#
+# This option will just extract the image into a temporary directory. This
+# will not invoke the prepare script. This split helps us in passing control
+# back to java to make version checks.
+#
+opt_e=false
+
+while getopts ':fsxe' c; do
 	case "$c" in
-	f | s | x) eval "opt_$c=true" ;;
+	f | s | x | e) eval "opt_$c=true" ;;
 	*) usage "illegal option -- $OPTARG" ;;
 	esac
 done
 shift $((OPTIND - 1))
 
-[[ $# -gt 1 ]] && usage "too many arguments specified"
-[[ $# -eq 0 ]] && usage "too few arguments specified"
-
 [[ "$EUID" -ne 0 ]] && die "must be run as root"
-[[ -d "$UPDATE_DIR" ]] || die "$UPDATE_DIR does not exist"
+[[ $# -eq 0 ]] && usage "too few arguments specified"
+[[ $# -gt 2 ]] && usage "too many arguments specified"
 
 case "$1" in
 *.upgrade.tar.gz) ;;
-*) die "The upgrade image must be a '.upgrade.tar.gz' file" ;;
+*) die "{message.upgrade.default.error}The upgrade image must be a '.upgrade.tar.gz' file" ;;
 esac
 
 UPGRADE_IMAGE_PATH="$(readlink -f "$1")"
-[[ -n "$UPGRADE_IMAGE_PATH" ]] || die "unable to determine upgrade image path"
+[[ -n "$UPGRADE_IMAGE_PATH" ]] || die "{message.upgrade.default.error}Unable to determine upgrade image path"
 
-trap cleanup EXIT
+if $opt_e; then
+	UNPACK_DIR="$2"
+	mkdir -p "$UNPACK_DIR"
+else
+	[[ -d "$UPDATE_DIR" ]] || die "{message.upgrade.default.error}$UPDATE_DIR does not exist"
+	UNPACK_DIR=$(mktemp -d -p "$UPDATE_DIR" -t unpack.XXXXXXX)
+fi
 
-UNPACK_DIR=$(mktemp -d -p "$UPDATE_DIR" -t unpack.XXXXXXX)
-[[ -d "$UNPACK_DIR" ]] || die "failed to create unpack directory '$UNPACK_DIR'"
+[[ -d "$UNPACK_DIR" ]] || die "{message.upgrade.default.error}Failed to create unpack directory '$UNPACK_DIR'"
+
 pushd "$UNPACK_DIR" &>/dev/null || die "'pushd $UNPACK_DIR' failed"
 
 report_progress_inc 10 "Extracting upgrade image."
 
 tar -xzf "$UPGRADE_IMAGE_PATH" ||
-	die "failed to extract upgrade image '$UPGRADE_IMAGE_PATH'"
+	die "{message.upgrade.default.error}Failed to extract upgrade image '$UPGRADE_IMAGE_PATH'"
 
 report_progress_inc 40 "Verifying format."
 
 for file in SHA256SUMS prepare; do
-	[[ -f "$file" ]] || die "image is corrupt; missing '$file' file"
+	[[ -f "$file" ]] || die "{message.upgrade.image.corrupt}Image is corrupt; missing '$file' file"
 done
 
 if [[ -z "$opt_s" ]]; then
@@ -106,21 +117,26 @@ if [[ -z "$opt_s" ]]; then
 		-verify /var/lib/delphix-appliance/key-public.pem.upgrade.5.3 \
 		-signature SHA256SUMS.sig.5.3 \
 		SHA256SUMS >/dev/null ||
-		die "image is corrupt; verification of 'SHA256SUMS' file," \
+		die "{message.upgrade.image.corrupt}Image is corrupt; verification of 'SHA256SUMS' file," \
 			"using signature 'SHA256SUMS.sig.5.3'" \
 			"and key 'key-public.pem.upgrade.5.3' failed"
 fi
 
 sha256sum -c SHA256SUMS >/dev/null ||
-	die "image is corrupt; checksums don't match"
+	die "{message.upgrade.checksum.invalid}Image is corrupt; checksums don't match"
 
 popd &>/dev/null || die "'popd' failed"
 
-report_progress_inc 50 "Handoff unpack to prepare script."
+if $opt_e; then
+	report_progress_inc 100 "Upgrade image extracted."
+	exit 0
+fi
+
+trap cleanup EXIT
+
+report_progress_inc 45 "Handoff unpack to prepare script."
 
 "$UNPACK_DIR"/prepare ${opt_f:+"-f"} ${opt_s:+"-s"} ${opt_x:+"-x"} "$UNPACK_DIR" ||
 	die "'prepare' hand-off failed"
-
-report_progress_inc 100 "Unpacking successful."
 
 exit 0
