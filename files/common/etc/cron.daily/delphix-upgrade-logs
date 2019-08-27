@@ -10,10 +10,10 @@
 # and removed before they consume storage space to the point of causing
 # capacity problems on the root filesystem and/or root pool.
 #
-find /var/log/delphix-upgrade -type f -mtime +7 -delete
+find /var/tmp/delphix-upgrade -type f -mtime +7 -delete
 
 #
 # After the old files have been deleted, we need to remove any empty
 # directories, excluding "/var/log/delphix-upgrade" itself.
 #
-find /var/log/delphix-upgrade -mindepth 1 -type d -mtime +7 -empty -delete
+find /var/tmp/delphix-upgrade -mindepth 1 -type d -mtime +7 -empty -delete
