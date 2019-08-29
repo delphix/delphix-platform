@@ -60,8 +60,8 @@ IMAGE="$1"
 PROPERTY="$2"
 
 case "$IMAGE" in
-*.upgrade.tar.gz) ;;
-*) die "The upgrade image must be a '.upgrade.tar.gz' file" ;;
+*.upgrade.tar) ;;
+*) die "The upgrade image must be a '.upgrade.tar' file" ;;
 esac
 
 UPGRADE_IMAGE_PATH="$(readlink -f "$IMAGE")"
@@ -73,7 +73,7 @@ UNPACK_DIR=$(mktemp -d -p "$UPDATE_DIR" -t unpack.XXXXXXX)
 [[ -d "$UNPACK_DIR" ]] || die "failed to create unpack directory '$UNPACK_DIR'"
 pushd "$UNPACK_DIR" &>/dev/null || die "'pushd $UNPACK_DIR' failed"
 
-tar -z -x SHA256SUMS SHA256SUMS.sig.5.3 version.info -f "$UPGRADE_IMAGE_PATH" ||
+tar -x SHA256SUMS SHA256SUMS.sig.5.3 version.info -f "$UPGRADE_IMAGE_PATH" ||
 	die "failed to extract files from upgrade image '$UPGRADE_IMAGE_PATH'"
 
 for file in SHA256SUMS SHA256SUMS.sig.5.3 version.info; do

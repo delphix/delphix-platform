@@ -56,8 +56,8 @@ aws s3 cp \
 	"s3://snapshot-de-images/builds/jenkins-ops/devops-gate/master/appliance-build/master/post-push/latest" \
 	. || die "failed to download file: 'latest'"
 
-$opt_f && rm -f "$1.upgrade.tar.gz" >/dev/null 2>&1
-[[ -f "$1.upgrade.tar.gz" ]] && die "image $1.upgrade.tar.gz already exists"
+$opt_f && rm -f "$1.upgrade.tar" >/dev/null 2>&1
+[[ -f "$1.upgrade.tar" ]] && die "image $1.upgrade.tar already exists"
 
-aws s3 cp "s3://snapshot-de-images/$(cat latest)/upgrade-artifacts/$1.upgrade.tar.gz" . ||
-	die "failed to download file: '$1.upgrade.tar.gz'"
+aws s3 cp "s3://snapshot-de-images/$(cat latest)/upgrade-artifacts/$1.upgrade.tar" . ||
+	die "failed to download file: '$1.upgrade.tar'"

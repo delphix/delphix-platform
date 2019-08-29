@@ -79,8 +79,8 @@ shift $((OPTIND - 1))
 IMAGE="$1"
 
 case "$IMAGE" in
-*.upgrade.tar.gz) ;;
-*) die "The upgrade image must be a '.upgrade.tar.gz' file" ;;
+*.upgrade.tar) ;;
+*) die "The upgrade image must be a '.upgrade.tar' file" ;;
 esac
 
 UPGRADE_IMAGE_PATH="$(readlink -f "$IMAGE")"
@@ -94,7 +94,7 @@ pushd "$UNPACK_DIR" &>/dev/null || die "'pushd $UNPACK_DIR' failed"
 
 report_progress_inc 10 "Extracting upgrade image."
 
-tar -xzf "$UPGRADE_IMAGE_PATH" ||
+tar -xf "$UPGRADE_IMAGE_PATH" ||
 	die "failed to extract upgrade image '$UPGRADE_IMAGE_PATH'"
 
 report_progress_inc 40 "Verifying format."
