@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2018, 2019 Delphix
+# Copyright 2019 Delphix
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
 # limitations under the License.
 #
 
+set -o pipefail
+
 UPDATE_DIR=${UPDATE_DIR:-/var/dlpx-update}
 
 function die() {
@@ -24,25 +26,13 @@ function die() {
 
 function usage() {
 	echo "$(basename "$0"): $*" >&2
-	echo "Usage: $(basename "$0") [-f] [-s] [-x] <image>"
+	echo "Usage: $(basename "$0") [-s] <image> <property>"
 	exit 2
-}
-
-function report_progress_inc() {
-	echo "Progress increment: $(date +%T:%N%z), $1, $2"
 }
 
 function cleanup() {
 	[[ -n "$UNPACK_DIR" ]] && [[ -d "$UNPACK_DIR" ]] && rm -rf "$UNPACK_DIR"
 }
-
-#
-# This option will "force" unpack the image, which will cause the image
-# currently being unpacked to overwrite any previously unpacked image of
-# the same version. Otherwise, this will fail if there's already an
-# unpacked image of the same version.
-#
-opt_f=""
 
 #
 # This option will skip the signature verification portion of this
@@ -52,31 +42,22 @@ opt_f=""
 #
 opt_s=""
 
-#
-# This option will cause this script to modify the "version.info" file,
-# setting the "MINIMUM_REBOOT_OPTIONAL_VERSION" field to be equal to the
-# "VERSION" field. This way, when an upgrade is performed using this
-# unpacked upgrade image, it'll result in a "not-in-place" upgrade when
-# perhaps this otherwise would not have occurred; this is mostly useful
-# for internal testing of the "not-in-place" upgrade code paths.
-#
-opt_x=""
-
-while getopts ':fsx' c; do
+while getopts ':s' c; do
 	case "$c" in
-	f | s | x) eval "opt_$c=true" ;;
+	s) eval "opt_$c=true" ;;
 	*) usage "illegal option -- $OPTARG" ;;
 	esac
 done
 shift $((OPTIND - 1))
 
-[[ $# -gt 1 ]] && usage "too many arguments specified"
-[[ $# -eq 0 ]] && usage "too few arguments specified"
+[[ $# -gt 2 ]] && usage "too many arguments specified"
+[[ $# -lt 2 ]] && usage "too few arguments specified"
 
 [[ "$EUID" -ne 0 ]] && die "must be run as root"
 [[ -d "$UPDATE_DIR" ]] || die "$UPDATE_DIR does not exist"
 
 IMAGE="$1"
+PROPERTY="$2"
 
 case "$IMAGE" in
 *.upgrade.tar.gz) ;;
@@ -92,14 +73,10 @@ UNPACK_DIR=$(mktemp -d -p "$UPDATE_DIR" -t unpack.XXXXXXX)
 [[ -d "$UNPACK_DIR" ]] || die "failed to create unpack directory '$UNPACK_DIR'"
 pushd "$UNPACK_DIR" &>/dev/null || die "'pushd $UNPACK_DIR' failed"
 
-report_progress_inc 10 "Extracting upgrade image."
+tar -z -x SHA256SUMS SHA256SUMS.sig.5.3 version.info -f "$UPGRADE_IMAGE_PATH" ||
+	die "failed to extract files from upgrade image '$UPGRADE_IMAGE_PATH'"
 
-tar -xzf "$UPGRADE_IMAGE_PATH" ||
-	die "failed to extract upgrade image '$UPGRADE_IMAGE_PATH'"
-
-report_progress_inc 40 "Verifying format."
-
-for file in SHA256SUMS prepare; do
+for file in SHA256SUMS SHA256SUMS.sig.5.3 version.info; do
 	[[ -f "$file" ]] || die "image is corrupt; missing '$file' file"
 done
 
@@ -113,16 +90,13 @@ if [[ -z "$opt_s" ]]; then
 			"and key 'key-public.pem.upgrade.5.3' failed"
 fi
 
-sha256sum -c SHA256SUMS >/dev/null ||
+awk '$2 == "version.info" { print $0 }' SHA256SUMS |
+	sha256sum --check --status ||
 	die "image is corrupt; checksums don't match"
 
+grep "^$PROPERTY=" version.info | cut -d = -f 2- ||
+	die "failed to get property '$PROPERTY'"
+
 popd &>/dev/null || die "'popd' failed"
-
-report_progress_inc 50 "Handoff unpack to prepare script."
-
-"$UNPACK_DIR"/prepare ${opt_f:+"-f"} ${opt_s:+"-s"} ${opt_x:+"-x"} "$UNPACK_DIR" ||
-	die "'prepare' hand-off failed"
-
-report_progress_inc 100 "Unpacking successful."
 
 exit 0
