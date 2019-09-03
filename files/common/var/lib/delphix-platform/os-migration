@@ -84,14 +84,16 @@ function perform_migration() {
 				dir_array+=(-d)
 				dir_array+=("$dir")
 			done < <(find "$AZURE_LINK" -maxdepth 1 -name "scsi*")
-			echo "zpool import -f ${dir_array[*]} domain0"
-			zpool import -f "${dir_array[@]}" domain0 ||
+			echo "zpool import -fN ${dir_array[*]} domain0"
+			zpool import -fN "${dir_array[@]}" domain0 ||
 				die "Failed to import domain0 by azure link"
 		elif [[ -d "$BY_ID_LINK" ]]; then
-			zpool import -f -d $BY_ID_LINK domain0 ||
+			echo "zpool import -fN -d $BY_ID_LINK domain0"
+			zpool import -fN -d $BY_ID_LINK domain0 ||
 				die "Failed to import domain0 by-id"
 		else
-			zpool import -f domain0 ||
+			echo "zpool import -fN domain0"
+			zpool import -fN domain0 ||
 				die "Failed to import domain0"
 		fi
 	fi
@@ -100,6 +102,24 @@ function perform_migration() {
 
 	__trigger_unset_stress_option \
 		"STRESS_MIGRATION_FAIL_AFTER_ZFS_MOUNT"
+
+	#
+	# sharenfs is set when a dataset (VDB/dSource) is shared and is
+	# cleared when it is stopped or quiesced. At this point in time,
+	# this property will only be set for datasets that failed to be
+	# quiesced before the upgrade reboot. The sharenfs setting was
+	# set on Illumos with options specific to Illumos and targetting
+	# an NFS version that may be different on Linux. As such, attempting
+	# to migrate it could result in unexpected behaviour, so we clear
+	# it instead. We rely on the user to manually restart any VDBs that
+	# failed to quiesce.
+	#
+	echo "clearing sharenfs properties"
+	zfs inherit -r sharenfs domain0 ||
+		die "failed to clear sharenfs properties"
+
+	echo "mounting ZFS file-systems"
+	zfs mount -a || die "Failed to mount zfs file-systems"
 
 	#
 	# domain0/mds is owned by delphix:staff on Illumos, and on Linux
