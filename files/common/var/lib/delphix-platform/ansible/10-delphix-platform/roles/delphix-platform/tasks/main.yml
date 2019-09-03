@@ -229,24 +229,12 @@
     - { key: "ClientAliveCountMax", value: "0" }
   when:
     #
-    # For developer convenience, we disable the CRA mandated timeout for
-    # the following internal appliance variants. None of the variants
-    # listed here should be provided to customers, so these don't need
-    # to have the same SSH timeout. Further, the idle timeout can be a
-    # burden when we need to run long running processes over SSH on our
-    # internal systems (e.g. for development, testing, etc).
+    # For developer convenience, we only enable the CRA mandated timeout
+    # for external variants. The idle timeout can be a burden when we
+    # need to run long running processes over SSH on our internal
+    # systems (e.g. for development, testing, etc).
     #
-    # Additionally, we explicitly do not list the "internal-qa" variant
-    # here. Even though that variant is not provided to customers (i.e.
-    # it doesn't have to adhere to the CRA mandate either), we want that
-    # variant to match our external variants as closely as possible.
-    # Thus, since we use this timeout for external variants, we use this
-    # timeout for the "internal-qa" variant.
-    #
-    - variant != "internal-dev"
-    - variant != "internal-dcenter"
-    - variant != "internal-minimal"
-    - variant != "internal-unittest"
+    - variant is regex("external-.*")
 
 #
 # Harden the appliance by disabling SFTP.
