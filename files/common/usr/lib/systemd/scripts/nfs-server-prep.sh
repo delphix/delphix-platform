@@ -18,4 +18,20 @@ if [[ "$versions" == "-2 -3 -4 -4.0 -4.1 -4.2" ]]; then
 	echo "Initializing the NFS server version"
 fi
 
+#
+# DLPX-65853
+# Due to a permissions error, where '/var/lib/nfs' is owned by statd, the
+# database used by nfsdcltrack(8) is never initialized.  This database is
+# necessary for the NFSv4 server to track clients and notify them when the
+# server is restarted.
+#
+# The work around is to create the directory that holds the client tracking
+# database upfront.
+#
+NFSD_CL_TRACK_DIR="/var/lib/nfs/nfsdcltrack"
+
+if [[ ! -d "$NFSD_CL_TRACK_DIR" ]]; then
+	mkdir "$NFSD_CL_TRACK_DIR" && echo Creating dir for fsdcltrack database
+fi
+
 exit 0
