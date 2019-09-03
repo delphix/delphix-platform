@@ -19,6 +19,9 @@ MIGRATE_CONFIG_SCRIPT="/opt/delphix/migration/migrate_config.py"
 MIGRATE_CONFIG_LOG="/var/delphix/migration/log"
 PG_REINDEX=/var/delphix/server/db/force-reindex
 
+# shellcheck disable=SC1091
+. /opt/delphix/server/bin/upgrade/dx_upg_stress_options --source
+
 #
 # The perform-migration flag file is created by dx_execute prior rebooting
 # into Linux.
@@ -37,6 +40,9 @@ function die() {
 # to resume the upgrade.
 #
 function perform_migration() {
+	__trigger_unset_stress_option \
+		"STRESS_MIGRATION_FAIL_BEGIN_MIGRATION_SERVICE"
+
 	echo "chown -R /var/delphix/server"
 	chown -R root:root /var/delphix/server ||
 		die "Failed to chown /var/delphix/server"
@@ -54,6 +60,9 @@ function perform_migration() {
 		chown -R masking:staff /var/delphix/masking ||
 			die "Failed to chown masking data directory"
 	fi
+
+	__trigger_unset_stress_option \
+		"STRESS_MIGRATION_FAIL_BEFORE_DOMAIN0_IMPORT"
 
 	if zpool list domain0 >/dev/null 2>&1; then
 		echo "note: domain0 is already imported"
@@ -86,6 +95,11 @@ function perform_migration() {
 				die "Failed to import domain0"
 		fi
 	fi
+	__trigger_unset_stress_option \
+		"STRESS_MIGRATION_FAIL_AFTER_DOMAIN0_IMPORT"
+
+	__trigger_unset_stress_option \
+		"STRESS_MIGRATION_FAIL_AFTER_ZFS_MOUNT"
 
 	#
 	# domain0/mds is owned by delphix:staff on Illumos, and on Linux
@@ -117,6 +131,9 @@ function perform_migration() {
 		fi
 	done
 
+	__trigger_unset_stress_option \
+		"STRESS_MIGRATION_FAIL_AFTER_MOUNT_PERMISSION_FIX"
+
 	#
 	# Wait on zvol dev links to be ready.
 	# This must be done after we import domain0 and before we attempt
@@ -132,11 +149,18 @@ function perform_migration() {
 	touch "$PG_REINDEX" || die "Failed to create $PG_REINDEX"
 	chown postgres "$PG_REINDEX" || die "Failed to chown $PG_REINDEX"
 
+	__trigger_unset_stress_option \
+		"STRESS_MIGRATION_FAIL_BEFORE_MIGRATE_CONFIG"
+
 	echo "$(date): Running migrate_config post-upgrade" \
 		>>"$MIGRATE_CONFIG_LOG"
 	"$MIGRATE_CONFIG_SCRIPT" post-upgrade >>"$MIGRATE_CONFIG_LOG" 2>&1 ||
 		die "Failed migrate_config post-upgrade, see" \
 			"$MIGRATE_CONFIG_LOG"
+
+	__trigger_unset_stress_option \
+		"STRESS_MIGRATION_FAIL_AFTER_MIGRATE_CONFIG"
+
 	rm "$PERFORM_MIGRATION" || die "Failed to remove $PERFORM_MIGRATION"
 }
 
