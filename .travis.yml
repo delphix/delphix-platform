@@ -16,7 +16,7 @@ env:
   - TARGET=shfmtcheck
 
 install:
-  - docker build -qt delphix-platform:latest docker
+  - docker build -t delphix-platform:latest docker
 
 script:
   - ./scripts/docker-run.sh make $TARGET
