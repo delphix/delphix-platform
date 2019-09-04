@@ -220,33 +220,33 @@
 # customer site will timeout preventing customers from gaining access to
 # our engine.
 #
+- set_fact:
+    ssh_client_alive_interval: "1800"
+
+#
+# With that said (see comment above), the Azure marketplace does not
+# allow a value greater than 3 minutes. So, when running on Azure, we
+# use 3 minutes.
+#
+- set_fact:
+    ssh_client_alive_interval: "180"
+  when: platform == "azure"
+
 - lineinfile:
     path: /etc/ssh/sshd_config
     regexp: "^#?{{ item.key }} "
     line: "{{ item.key }} {{ item.value }}"
   with_items:
-    - { key: "ClientAliveInterval", value: "1800" }
+    - { key: "ClientAliveInterval", value: "{{ ssh_client_alive_interval }}" }
     - { key: "ClientAliveCountMax", value: "0" }
   when:
     #
-    # For developer convenience, we disable the CRA mandated timeout for
-    # the following internal appliance variants. None of the variants
-    # listed here should be provided to customers, so these don't need
-    # to have the same SSH timeout. Further, the idle timeout can be a
-    # burden when we need to run long running processes over SSH on our
-    # internal systems (e.g. for development, testing, etc).
+    # For developer convenience, we only enable the CRA mandated timeout
+    # for external variants. The idle timeout can be a burden when we
+    # need to run long running processes over SSH on our internal
+    # systems (e.g. for development, testing, etc).
     #
-    # Additionally, we explicitly do not list the "internal-qa" variant
-    # here. Even though that variant is not provided to customers (i.e.
-    # it doesn't have to adhere to the CRA mandate either), we want that
-    # variant to match our external variants as closely as possible.
-    # Thus, since we use this timeout for external variants, we use this
-    # timeout for the "internal-qa" variant.
-    #
-    - variant != "internal-dev"
-    - variant != "internal-dcenter"
-    - variant != "internal-minimal"
-    - variant != "internal-unittest"
+    - variant is regex("external-.*")
 
 #
 # Harden the appliance by disabling SFTP.
