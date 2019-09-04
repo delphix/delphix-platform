@@ -17,7 +17,7 @@
 
 MIGRATE_CONFIG_SCRIPT="/opt/delphix/migration/migrate_config.py"
 MIGRATE_CONFIG_LOG="/var/delphix/migration/log"
-PG_REINDEX=/var/delphix/server/db/force-reindex
+PG_REINDEX="/var/delphix/server/db/force-reindex"
 
 # shellcheck disable=SC1091
 . /opt/delphix/server/bin/upgrade/dx_upg_stress_options --source
@@ -27,6 +27,12 @@ PG_REINDEX=/var/delphix/server/db/force-reindex
 # into Linux.
 #
 PERFORM_MIGRATION="/var/delphix/migration/perform-migration"
+
+#
+# This flag file indicates that "/usr/bin/illumos-cleanup post-migration"
+# must be run.
+#
+POST_MIGRATION_CLEANUP="/var/delphix/migration/post-migration-cleanup-required"
 
 function die() {
 	echo "$(basename "$0"): $*" >&2
@@ -180,6 +186,9 @@ function perform_migration() {
 
 	__trigger_unset_stress_option \
 		"STRESS_MIGRATION_FAIL_AFTER_MIGRATE_CONFIG"
+
+	touch "$POST_MIGRATION_CLEANUP" ||
+		die "Failed to create $POST_MIGRATION_CLEANUP"
 
 	rm "$PERFORM_MIGRATION" || die "Failed to remove $PERFORM_MIGRATION"
 }
