@@ -127,6 +127,7 @@ DEPENDS += bcc-tools, \
 	   ptools, \
 	   pv, \
 	   screen, \
+	   sdb, \
 	   sg3-utils, \
 	   snmp, \
 	   snmp-mibs-downloader, \
