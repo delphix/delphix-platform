@@ -47,6 +47,7 @@ $DOCKER_RUN --rm \
 	--env AWS_SECRET_ACCESS_KEY \
 	--env DELPHIX_SIGNATURE_URL \
 	--env DELPHIX_SIGNATURE_TOKEN \
+	--env DELPHIX_SIGNATURE_VERSION \
 	--volume "$TOP:/opt/delphix-platform" \
 	--workdir "/opt/delphix-platform" \
 	delphix-platform "$@"
