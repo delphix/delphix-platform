@@ -1,5 +1,5 @@
 #
-# Copyright 2018 Delphix
+# Copyright 2018, 2019 Delphix
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -445,3 +445,11 @@
 - command: pam-auth-update --enable challenge-response
   when:
     - variant is regex("external-.*")
+
+#
+# Configure kdump so that makedumpfile excludes ZFS ARC file data pages
+#
+- lineinfile:
+    path: /etc/default/kdump-tools
+    regexp: '^#?MAKEDUMP_ARGS='
+    line: 'MAKEDUMP_ARGS="-c -d 31 --message-level 22 --private-page-filter 0x2F5ABDF11ECAC4E"'
