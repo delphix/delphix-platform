@@ -26,10 +26,16 @@
 # so this dependency doesn't conflict with the zfs-import.target.
 #
 # Finally, we must make sure to remove default service dependencies, as
-# those would create a dependency cycle (this service must run before
-# local-fs.target, but default dependencies require local-fs.target). Note
-# that the zfs-import.target dependency means that this service will run
-# before local-fs.target, and so before any other Delphix service.
+# those would create a dependency cycle. We still want this service to
+# start after local-fs.target as delphix-migration can make direct
+# or indirect calls to "systemctl daemon-reload", which interacts badly
+# with mount services created from /etc/fstab.
+# See https://github.com/systemd/systemd/issues/10872 for more details.
+#
+# We depend on /var/delphix being present, so we add an explicit dependency
+# on var-delphix.mount. Although this dependency is already covered by
+# local-fs.target, it is better to be more explicit in case we decided to
+# remove the latter.
 #
 [Unit]
 Description=Delphix OS Migration Service
@@ -37,6 +43,7 @@ PartOf=delphix.target
 DefaultDependencies=no
 After=systemd-udev-settle.service
 After=var-delphix.mount
+After=local-fs.target
 Before=network-pre.target
 Before=zfs-import.target
 #
