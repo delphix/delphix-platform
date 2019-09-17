@@ -20,8 +20,15 @@ set -o pipefail
 UPDATE_DIR=${UPDATE_DIR:-/var/dlpx-update}
 
 function die() {
+	exit_code=$1
+	# Use first argument as exit code, if provided.
+	if [[ -z "${exit_code//[0-9]/}" ]]; then
+		shift
+	else
+		exit_code=1
+	fi
 	echo "$(basename "$0"): $*" >&2
-	exit 1
+	exit ${exit_code}
 }
 
 function usage() {
@@ -54,18 +61,18 @@ shift $((OPTIND - 1))
 [[ $# -lt 2 ]] && usage "too few arguments specified"
 
 [[ "$EUID" -ne 0 ]] && die "must be run as root"
-[[ -d "$UPDATE_DIR" ]] || die "$UPDATE_DIR does not exist"
+[[ -d "$UPDATE_DIR" ]] || die 11 "$UPDATE_DIR does not exist"
 
 IMAGE="$1"
 PROPERTY="$2"
 
 case "$IMAGE" in
 *.upgrade.tar) ;;
-*) die "The upgrade image must be a '.upgrade.tar' file" ;;
+*) die 12 "The upgrade image must be a '.upgrade.tar' file" ;;
 esac
 
 UPGRADE_IMAGE_PATH="$(readlink -f "$IMAGE")"
-[[ -n "$UPGRADE_IMAGE_PATH" ]] || die "unable to determine upgrade image path"
+[[ -n "$UPGRADE_IMAGE_PATH" ]] || die 13 "unable to determine upgrade image path"
 
 trap cleanup EXIT
 
@@ -74,10 +81,10 @@ UNPACK_DIR=$(mktemp -d -p "$UPDATE_DIR" -t unpack.XXXXXXX)
 pushd "$UNPACK_DIR" &>/dev/null || die "'pushd $UNPACK_DIR' failed"
 
 tar -x SHA256SUMS SHA256SUMS.sig.5.3 version.info -f "$UPGRADE_IMAGE_PATH" ||
-	die "failed to extract files from upgrade image '$UPGRADE_IMAGE_PATH'"
+	die 14 "failed to extract files from upgrade image '$UPGRADE_IMAGE_PATH'"
 
 for file in SHA256SUMS SHA256SUMS.sig.5.3 version.info; do
-	[[ -f "$file" ]] || die "image is corrupt; missing '$file' file"
+	[[ -f "$file" ]] || die 15 "image is corrupt; missing '$file' file"
 done
 
 if [[ -z "$opt_s" ]]; then
@@ -85,14 +92,14 @@ if [[ -z "$opt_s" ]]; then
 		-verify /var/lib/delphix-appliance/key-public.pem.upgrade.5.3 \
 		-signature SHA256SUMS.sig.5.3 \
 		SHA256SUMS >/dev/null ||
-		die "image is corrupt; verification of 'SHA256SUMS' file," \
+		die 16 "image is corrupt; verification of 'SHA256SUMS' file," \
 			"using signature 'SHA256SUMS.sig.5.3'" \
 			"and key 'key-public.pem.upgrade.5.3' failed"
 fi
 
 awk '$2 == "version.info" { print $0 }' SHA256SUMS |
 	sha256sum --check --status ||
-	die "image is corrupt; checksums don't match"
+	die 17 "image is corrupt; checksums don't match"
 
 grep "^$PROPERTY=" version.info | cut -d = -f 2- ||
 	die "failed to get property '$PROPERTY'"
