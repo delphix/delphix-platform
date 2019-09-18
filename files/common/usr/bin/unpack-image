@@ -18,8 +18,15 @@
 UPDATE_DIR=${UPDATE_DIR:-/var/dlpx-update}
 
 function die() {
+	exit_code=$1
+	# Use first argument as exit code, if provided.
+	if [[ -z "${exit_code//[0-9]/}" ]]; then
+		shift
+	else
+		exit_code=1
+	fi
 	echo "$(basename "$0"): $*" >&2
-	exit 1
+	exit ${exit_code}
 }
 
 function usage() {
@@ -74,17 +81,17 @@ shift $((OPTIND - 1))
 [[ $# -eq 0 ]] && usage "too few arguments specified"
 
 [[ "$EUID" -ne 0 ]] && die "must be run as root"
-[[ -d "$UPDATE_DIR" ]] || die "$UPDATE_DIR does not exist"
+[[ -d "$UPDATE_DIR" ]] || die 11 "$UPDATE_DIR does not exist"
 
 IMAGE="$1"
 
 case "$IMAGE" in
 *.upgrade.tar) ;;
-*) die "The upgrade image must be a '.upgrade.tar' file" ;;
+*) die 12 "The upgrade image must be a '.upgrade.tar' file" ;;
 esac
 
 UPGRADE_IMAGE_PATH="$(readlink -f "$IMAGE")"
-[[ -n "$UPGRADE_IMAGE_PATH" ]] || die "unable to determine upgrade image path"
+[[ -n "$UPGRADE_IMAGE_PATH" ]] || die 13 "unable to determine upgrade image path"
 
 trap cleanup EXIT
 
@@ -95,12 +102,12 @@ pushd "$UNPACK_DIR" &>/dev/null || die "'pushd $UNPACK_DIR' failed"
 report_progress_inc 10 "Extracting upgrade image."
 
 tar -xf "$UPGRADE_IMAGE_PATH" ||
-	die "failed to extract upgrade image '$UPGRADE_IMAGE_PATH'"
+	die 14 "failed to extract upgrade image '$UPGRADE_IMAGE_PATH'"
 
 report_progress_inc 40 "Verifying format."
 
 for file in SHA256SUMS prepare; do
-	[[ -f "$file" ]] || die "image is corrupt; missing '$file' file"
+	[[ -f "$file" ]] || die 15 "image is corrupt; missing '$file' file"
 done
 
 if [[ -z "$opt_s" ]]; then
@@ -108,20 +115,21 @@ if [[ -z "$opt_s" ]]; then
 		-verify /var/lib/delphix-appliance/key-public.pem.upgrade.5.3 \
 		-signature SHA256SUMS.sig.5.3 \
 		SHA256SUMS >/dev/null ||
-		die "image is corrupt; verification of 'SHA256SUMS' file," \
+		die 16 "image is corrupt; verification of 'SHA256SUMS' file," \
 			"using signature 'SHA256SUMS.sig.5.3'" \
 			"and key 'key-public.pem.upgrade.5.3' failed"
 fi
 
 sha256sum -c SHA256SUMS >/dev/null ||
-	die "image is corrupt; checksums don't match"
+	die 17 "image is corrupt; checksums don't match"
 
 popd &>/dev/null || die "'popd' failed"
 
 report_progress_inc 50 "Handoff unpack to prepare script."
 
-"$UNPACK_DIR"/prepare ${opt_f:+"-f"} ${opt_s:+"-s"} ${opt_x:+"-x"} "$UNPACK_DIR" ||
-	die "'prepare' hand-off failed"
+"$UNPACK_DIR"/prepare ${opt_f:+"-f"} ${opt_s:+"-s"} ${opt_x:+"-x"} "$UNPACK_DIR"
+return=$?
+[[ ${return} -eq 0 ]] || die ${return} "'prepare' hand-off failed"
 
 report_progress_inc 100 "Unpacking successful."
 
