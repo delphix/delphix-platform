@@ -133,4 +133,8 @@ return=$?
 
 report_progress_inc 100 "Unpacking successful."
 
+if [[ $(systemctl is-active delphix-mgmt.service) == "active" ]]; then
+	su sysadmin -c "system version" >/dev/null
+fi
+
 exit 0
