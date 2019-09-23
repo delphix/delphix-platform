@@ -113,6 +113,13 @@ function perform_migration() {
 	__trigger_unset_stress_option \
 		"STRESS_MIGRATION_FAIL_AFTER_DOMAIN0_IMPORT"
 
+	#
+	# Note that we must mount the ZFS datasets before clearing sharenfs
+	# as calling after sometimes fails (see DLPX-66005 for more info).
+	#
+	echo "mounting ZFS file-systems"
+	zfs mount -a || die "Failed to mount zfs file-systems"
+
 	__trigger_unset_stress_option \
 		"STRESS_MIGRATION_FAIL_AFTER_ZFS_MOUNT"
 
@@ -130,9 +137,6 @@ function perform_migration() {
 	echo "clearing sharenfs properties"
 	zfs inherit -r sharenfs domain0 ||
 		die "failed to clear sharenfs properties"
-
-	echo "mounting ZFS file-systems"
-	zfs mount -a || die "Failed to mount zfs file-systems"
 
 	#
 	# domain0/mds is owned by delphix:staff on Illumos, and on Linux
