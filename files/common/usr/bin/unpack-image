@@ -110,14 +110,16 @@ for file in SHA256SUMS prepare; do
 	[[ -f "$file" ]] || die 15 "image is corrupt; missing '$file' file"
 done
 
+DELPHIX_SIGNATURE_VERSION=$(/usr/bin/get-appliance-version | cut -d - -f 1 | cut -d . -f 1-2)
+
 if [[ -z "$opt_s" ]]; then
 	openssl dgst -sha256 \
-		-verify /var/lib/delphix-appliance/key-public.pem.upgrade.5.3 \
-		-signature SHA256SUMS.sig.5.3 \
+		-verify /var/lib/delphix-appliance/key-public.pem.upgrade."$DELPHIX_SIGNATURE_VERSION" \
+		-signature SHA256SUMS.sig."$DELPHIX_SIGNATURE_VERSION" \
 		SHA256SUMS >/dev/null ||
 		die 16 "image is corrupt; verification of 'SHA256SUMS' file," \
-			"using signature 'SHA256SUMS.sig.5.3'" \
-			"and key 'key-public.pem.upgrade.5.3' failed"
+			"using signature 'SHA256SUMS.sig.$DELPHIX_SIGNATURE_VERSION'" \
+			"and key 'key-public.pem.upgrade.$DELPHIX_SIGNATURE_VERSION' failed"
 fi
 
 sha256sum -c SHA256SUMS >/dev/null ||

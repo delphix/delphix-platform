@@ -22,6 +22,8 @@ KERNEL_TYPE.esx := generic
 KERNEL_TYPE.gcp := gcp
 KERNEL_TYPE.kvm := kvm
 
+DELPHIX_SIGNATURE_TYPES = registration upgrade
+
 #
 # The following meta-package consolidates all the kernel packages required
 # by the Delphix Appliance for a given platform. Note that delphix-kernel
@@ -166,8 +168,9 @@ override_dh_install:
 		>debian/tmp/var/lib/delphix-appliance/platform
 	rm debian/tmp/var/lib/delphix-appliance/platform.in
 
-	./scripts/download-signature-key.sh upgrade 5.3 \
-		>debian/tmp/var/lib/delphix-appliance/key-public.pem.upgrade.5.3
+	for type in $(DELPHIX_SIGNATURE_TYPES) ; do \
+		./scripts/download-signature-key.sh $$type "$(DELPHIX_SIGNATURE_VERSION)" \
+		>"debian/tmp/var/lib/delphix-appliance/key-public.pem.$$type.$(DELPHIX_SIGNATURE_VERSION)" ; done
 
 	dh_install --autodest "debian/tmp/*"
 

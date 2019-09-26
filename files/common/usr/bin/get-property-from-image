@@ -80,21 +80,23 @@ UNPACK_DIR=$(mktemp -d -p "$UPDATE_DIR" -t unpack.XXXXXXX)
 [[ -d "$UNPACK_DIR" ]] || die "failed to create unpack directory '$UNPACK_DIR'"
 pushd "$UNPACK_DIR" &>/dev/null || die "'pushd $UNPACK_DIR' failed"
 
-tar -x SHA256SUMS SHA256SUMS.sig.5.3 version.info -f "$UPGRADE_IMAGE_PATH" ||
+DELPHIX_SIGNATURE_VERSION=$(/usr/bin/get-appliance-version | cut -d - -f 1 | cut -d . -f 1-2)
+
+tar -x SHA256SUMS SHA256SUMS.sig."$DELPHIX_SIGNATURE_VERSION" version.info -f "$UPGRADE_IMAGE_PATH" ||
 	die 14 "failed to extract files from upgrade image '$UPGRADE_IMAGE_PATH'"
 
-for file in SHA256SUMS SHA256SUMS.sig.5.3 version.info; do
+for file in SHA256SUMS SHA256SUMS.sig."$DELPHIX_SIGNATURE_VERSION" version.info; do
 	[[ -f "$file" ]] || die 15 "image is corrupt; missing '$file' file"
 done
 
 if [[ -z "$opt_s" ]]; then
 	openssl dgst -sha256 \
-		-verify /var/lib/delphix-appliance/key-public.pem.upgrade.5.3 \
-		-signature SHA256SUMS.sig.5.3 \
+		-verify /var/lib/delphix-appliance/key-public.pem.upgrade."$DELPHIX_SIGNATURE_VERSION" \
+		-signature SHA256SUMS.sig."$DELPHIX_SIGNATURE_VERSION" \
 		SHA256SUMS >/dev/null ||
 		die 16 "image is corrupt; verification of 'SHA256SUMS' file," \
-			"using signature 'SHA256SUMS.sig.5.3'" \
-			"and key 'key-public.pem.upgrade.5.3' failed"
+			"using signature 'SHA256SUMS.sig.$DELPHIX_SIGNATURE_VERSION'" \
+			"and key 'key-public.pem.upgrade.$DELPHIX_SIGNATURE_VERSION' failed"
 fi
 
 awk '$2 == "version.info" { print $0 }' SHA256SUMS |

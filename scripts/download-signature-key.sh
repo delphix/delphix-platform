@@ -30,11 +30,6 @@ fi
 set -o errexit
 set -o pipefail
 
-if [[ -z "$1" ]] || [[ -z "$2" ]]; then
-	echo "Must specify key 'type' and 'version'."
-	exit 1
-fi
-
 TYPE="$1"
 VERSION="$2"
 
@@ -46,7 +41,13 @@ VERSION="$2"
 # package will not be correct. When this package is built by our build
 # system and automation, these variables should be available.
 #
-if [[ -n "${DELPHIX_SIGNATURE_TOKEN:-}" ]] && [[ -n "${DELPHIX_SIGNATURE_URL:-}" ]]; then
+if [[ -n "${DELPHIX_SIGNATURE_TOKEN:-}" ]] &&
+	[[ -n "${DELPHIX_SIGNATURE_URL:-}" ]] &&
+	[[ -n "${DELPHIX_SIGNATURE_VERSION:-}" ]]; then
+	if [[ -z "$TYPE" ]] || [[ -z "$VERSION" ]]; then
+		echo "Must specify key 'type' and 'version'."
+		exit 1
+	fi
 	curl -s -S -u "$DELPHIX_SIGNATURE_TOKEN" \
 		"$DELPHIX_SIGNATURE_URL/$TYPE/keyVersion/$VERSION" |
 		jq -Mr .publicKey
