@@ -109,7 +109,6 @@ DEPENDS += bcc-tools, \
 	   ethtool, \
 	   gdb, \
 	   gdb-python, \
-	   glances, \
 	   htop, \
 	   iftop, \
 	   inotify-tools, \
