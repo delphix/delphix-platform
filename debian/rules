@@ -58,6 +58,16 @@ DEPENDS += ansible, \
 	   systemd-container, \
 	   ubuntu-minimal,
 
+# Debugging symbols for packages pulled in by the the above dependencies
+DEPENDS += systemd-dbgsym, \
+	   dbus-dbgsym, \
+	   openssh-server-dbgsym, \
+	   openssh-client-dbgsym, \
+	   coreutils-dbgsym, \
+	   bash-dbgsym, \
+	   iproute2-dbgsym, \
+	   net-tools-dbgsym,
+
 #
 # The following package contains the GPG keys which allow us to download
 # from the repositories which contain packages containing debug symbols.
@@ -82,7 +92,8 @@ DEPENDS += delphix-buildinfo-kernel,
 #
 # The CRA PAM module provides an authentication method for the delphix user.
 #
-DEPENDS += pam-challenge-response,
+DEPENDS += pam-challenge-response, \
+	   pam-challenge-response-dbgsym,
 
 # Platform-specific dependencies
 DEPENDS.aws =
@@ -104,6 +115,7 @@ DEPENDS += bcc-tools, \
 	   crash-python, \
 	   dnsutils, \
 	   drgn, \
+	   drgn-dbgsym, \
 	   dstat, \
 	   emacs-nox, \
 	   ethtool, \
@@ -115,7 +127,9 @@ DEPENDS += bcc-tools, \
 	   iotop, \
 	   jq, \
 	   kdump-tools, \
+	   makedumpfile-dbgsym, \
 	   libkdumpfile, \
+	   libkdumpfile-dbgsym, \
 	   lsof, \
 	   man-db, \
 	   manpages, \
@@ -126,6 +140,7 @@ DEPENDS += bcc-tools, \
 	   procinfo, \
 	   psmisc, \
 	   ptools, \
+	   ptools-dbgsym, \
 	   pv, \
 	   screen, \
 	   sdb, \
