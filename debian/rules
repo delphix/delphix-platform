@@ -20,7 +20,7 @@ KERNEL_TYPE.aws := aws
 KERNEL_TYPE.azure := azure
 KERNEL_TYPE.esx := generic
 KERNEL_TYPE.gcp := gcp
-KERNEL_TYPE.kvm := kvm
+KERNEL_TYPE.kvm := generic
 
 DELPHIX_SIGNATURE_TYPES = registration upgrade
 
