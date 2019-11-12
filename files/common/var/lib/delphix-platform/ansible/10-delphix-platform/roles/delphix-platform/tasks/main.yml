@@ -440,6 +440,31 @@
     line: '\1\2'
 
 #
+# The default udev rules create two different by-id links for each storage
+# device on ESX, based the same serial number but with different prefixes.
+# The first is based on the bus type (scsi) and the second is a catch-all
+# "World Wide Name" (wwn). After migration, we import domain0 with the
+# "/dev/disk/by-id" path, but since udev runs asynchronously, we may end up
+# with a mix of wwn and scsi aliases. This causes problems when the DE tries to
+# match devices on the system to those in the pool, i.e. for removal.
+#
+# This moves the wwn links to the /dev/disk/by-id/wwn sub-directory, keeping it
+# available as a backup but limiting the /dev/disk/by-id namespace to one type
+# of id. We override the original rules in /lib/ with our new version in /etc/.
+#
+- copy:
+    remote_src: yes
+    src: /lib/udev/rules.d/60-persistent-storage.rules
+    dest: /etc/udev/rules.d/60-persistent-storage.rules
+    owner: root
+    group: root
+    mode: 0644
+- replace:
+    path: /etc/udev/rules.d/60-persistent-storage.rules
+    regexp: 'disk\/by-id\/wwn-'
+    replace: 'disk/by-id/wwn/'
+
+#
 # Enable CRA for external variants
 #
 - command: pam-auth-update --enable challenge-response
