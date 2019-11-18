@@ -138,6 +138,7 @@ DEPENDS += bcc-tools, \
 	   memstat, \
 	   ncdu, \
 	   pciutils, \
+	   performance-diagnostics, \
 	   procinfo, \
 	   psmisc, \
 	   ptools, \
