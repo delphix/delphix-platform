@@ -19,6 +19,7 @@ MIGRATE_CONFIG_SCRIPT="/opt/delphix/migration/migrate_config.py"
 MIGRATE_CONFIG_LOG="/var/delphix/migration/log"
 PG_REINDEX=/var/delphix/server/db/force-reindex
 MGMT_SERVICE_OVERRIDE="/run/systemd/system/delphix-mgmt.service.d/override.conf"
+POSTGRES_SERVICE_OVERRIDE="/run/systemd/system/delphix-postgres@default.service.d/override.conf"
 
 # shellcheck disable=SC1091
 . /opt/delphix/server/bin/upgrade/dx_upg_stress_options --source
@@ -187,9 +188,28 @@ function perform_migration() {
 	chown postgres "$PG_REINDEX" || die "Failed to chown $PG_REINDEX"
 
 	#
-	# Prevent the mgmt service from restarting on failure for the duration
-	# of migration as this makes debugging and migration stress testing
-	# harder.
+	# Since re-indexing can take a long time, we increase the timeout
+	# for the postgres service. We also prevent the service from restarting
+	# on failure since if re-indexing takes unusually long and still times
+	# out, we do not want to keep re-trying and timing out again. Those
+	# settings are temporary and are reverted when migration completes.
+	#
+	mkdir -p "$(dirname "$POSTGRES_SERVICE_OVERRIDE")" ||
+		die "Failed to create dir $(dirname "$POSTGRES_SERVICE_OVERRIDE")"
+	cat <<-EOF >"$POSTGRES_SERVICE_OVERRIDE" ||
+		#
+		# Set temporarily by delphix-migration service.
+		#
+		[Service]
+		Restart=no
+		TimeoutSec=3600
+	EOF
+		die "Failed to create delphix-postgres.service override file."
+
+	#
+	# Similarly, prevent the mgmt service from restarting on failure for
+	# the duration of migration as this makes debugging and migration
+	# stress testing harder.
 	#
 	mkdir -p "$(dirname "$MGMT_SERVICE_OVERRIDE")" ||
 		die "Failed to create dir $(dirname "$MGMT_SERVICE_OVERRIDE")"
@@ -201,6 +221,10 @@ function perform_migration() {
 		Restart=no
 	EOF
 		die "Failed to create delphix-mgmt.service override file."
+
+	#
+	# Notify systemd of the new service override files.
+	#
 	systemctl daemon-reload || die "daemon-reload failed"
 
 	rm "$PERFORM_MIGRATION" || die "Failed to remove $PERFORM_MIGRATION"
