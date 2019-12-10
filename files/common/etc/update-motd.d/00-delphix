@@ -1,7 +1,4 @@
 #!/bin/sh
 
-full_version=$(/usr/bin/get-appliance-version)
-version=$(echo "$full_version" | awk -F'-' '{print $1}')
-build=$(echo "$full_version" | sed 's/.*-\(.*\)+.*/\1/')
-
-printf "Welcome to Delphix %s (%s)\n" "$version" "$build"
+version=$(/usr/bin/get-appliance-version | awk -F'+' '{print $1}')
+printf "Welcome to Delphix %s\n" "$version"
