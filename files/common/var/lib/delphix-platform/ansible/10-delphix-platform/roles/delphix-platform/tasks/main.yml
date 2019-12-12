@@ -480,9 +480,9 @@
     line: 'MAKEDUMP_ARGS="-c -d 31 --message-level 22 --private-page-filter 0x2F5ABDF11ECAC4E"'
 
 #
-# Disable all motd scripts except for those provided by Delphix. We start by
-# removing executable permissions on every script in /etc/update-motd.d except
-# those that have "-delphix" in their filename.
+# Disable all motd scripts except for those provided by Delphix by removing
+# executable permissions on every script in /etc/update-motd.d except those
+# that have "-delphix" in their filename.
 #
 - find:
     paths: /etc/update-motd.d
@@ -493,24 +493,3 @@
     path: "{{ item.path }}"
     mode: 0644
   with_items: '{{ motd_files.files }}'
-
-#
-# We also need to make sure that the motd-news.service never runs. This
-# service reaches out to a public Ubuntu news service over the public
-# Internet to cache dynamic content that is then optionally printed by
-# /etc/update-motd.d/50-motd-news. There are at least three problems with
-# this:
-#
-# 1. We don't want engines in customer environments reaching out to
-#    public services.
-# 2. We don't care about the dynamic content provided by Ubuntu.
-# 3. The service explicitly runs the /etc/update-motd.d/50-motd-news script
-#    and fails if that script isn't executable (we disable the executable
-#    bit on it above).
-#
-# As such, the service needs to be disable/masked, which involves both
-# the service unit along with the timer unit that is tasked with running
-# it every 12 hours.
-#
-- command: systemctl mask motd-news.service
-- command: systemctl mask motd-news.timer
