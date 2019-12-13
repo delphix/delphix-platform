@@ -178,7 +178,7 @@
 # would end up causing important messages from less verbose services to
 # be flushed and lost prematurely.
 #
-- shell: systemctl mask systemd-journald-audit.socket
+- command: systemctl mask systemd-journald-audit.socket
 
 #
 # By default, the ulimit for core files is set to 0, and the default
@@ -478,3 +478,18 @@
     path: /etc/default/kdump-tools
     regexp: '^#?MAKEDUMP_ARGS='
     line: 'MAKEDUMP_ARGS="-c -d 31 --message-level 22 --private-page-filter 0x2F5ABDF11ECAC4E"'
+
+#
+# Disable all motd scripts except for those provided by Delphix by removing
+# executable permissions on every script in /etc/update-motd.d except those
+# that have "-delphix" in their filename.
+#
+- find:
+    paths: /etc/update-motd.d
+    excludes: '*-delphix*'
+  register: motd_files
+
+- file:
+    path: "{{ item.path }}"
+    mode: 0644
+  with_items: '{{ motd_files.files }}'
