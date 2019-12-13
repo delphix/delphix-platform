@@ -25,6 +25,28 @@ configure)
 
 	systemctl disable unattended-upgrades.service
 
+	#
+	# We need to make sure that the motd-news.service is disabled. This
+	# service reaches out to a public Ubuntu news service over the public
+	# Internet to cache dynamic content that is then optionally printed by
+	# /etc/update-motd.d/50-motd-news. There are at least three problems
+	# with this:
+	#
+	# 1. We don't want engines in customer environments reaching out to
+	#    public services.
+	# 2. We don't care about the dynamic content provided by Ubuntu.
+	# 3. The service explicitly runs the /etc/update-motd.d/50-motd-news
+	#    script and fails if that script isn't executable, and we
+	#    turn off all executable bits on files in this directory except
+	#    those supplied by Delphix to suppress non-Delphix motd messages.
+	#
+	# As such, the service needs to be disable, which involves both the
+	# service unit along with the timer unit that is tasked with running it
+	# every 12 hours.
+	#
+	systemctl disable motd-news.service
+	systemctl disable motd-news.timer
+
 	systemctl enable auditd.service
 	systemctl enable delphix.target
 	systemctl enable delphix-migration.service
