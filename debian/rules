@@ -1,6 +1,6 @@
 #!/usr/bin/make -f
 #
-# Copyright 2018, 2019 Delphix
+# Copyright 2018, 2020 Delphix
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ KERNEL_TYPE.aws := aws
 KERNEL_TYPE.azure := azure
 KERNEL_TYPE.esx := generic
 KERNEL_TYPE.gcp := gcp
+KERNEL_TYPE.hyperv := azure
 KERNEL_TYPE.kvm := generic
 
 DELPHIX_SIGNATURE_TYPES = registration upgrade
@@ -97,10 +98,11 @@ DEPENDS += pam-challenge-response, \
 
 # Platform-specific dependencies
 DEPENDS.aws =
-DEPENDS.azure = walinuxagent,
+DEPENDS.azure = walinuxagent, linux-cloud-tools-azure,
 DEPENDS.esx = open-vm-tools,
 DEPENDS.gcp = gce-compute-image-packages, python-google-compute-engine, \
 	   python3-google-compute-engine,
+DEPENDS.hyperv = linux-cloud-tools-azure,
 DEPENDS.kvm =
 DEPENDS += $(DEPENDS.$(TARGET_PLATFORM))
 
