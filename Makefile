@@ -1,5 +1,5 @@
 #
-# Copyright 2018, 2019 Delphix
+# Copyright 2018, 2020 Delphix
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-ALL_PLATFORMS := aws azure esx gcp kvm
+ALL_PLATFORMS := aws azure esx gcp hyperv kvm
 
 #
 # The version field defaults to a timestamp. Note that it can be
