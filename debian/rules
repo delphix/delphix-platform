@@ -61,7 +61,12 @@ DEPENDS += ansible, \
 
 # Debugging symbols for packages pulled in by the the above dependencies
 DEPENDS += systemd-dbgsym, \
+	   libsystemd0-dbgsym, \
+	   libblkid1-dbgsym, \
+	   libmount1-dbgsym, \
+	   libuuid1-dbgsym, \
 	   dbus-dbgsym, \
+	   libdbus-1-3-dbgsym, \
 	   openssh-server-dbgsym, \
 	   openssh-client-dbgsym, \
 	   coreutils-dbgsym, \
