@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-ALL_PLATFORMS := aws azure esx gcp hyperv kvm
+ALL_PLATFORMS := aws azure esx gcp hyperv kvm oci
 
 #
 # The version field defaults to a timestamp. Note that it can be
