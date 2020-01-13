@@ -22,6 +22,7 @@ KERNEL_TYPE.esx := generic
 KERNEL_TYPE.gcp := gcp
 KERNEL_TYPE.hyperv := azure
 KERNEL_TYPE.kvm := generic
+KERNEL_TYPE.oci := oracle
 
 DELPHIX_SIGNATURE_TYPES = registration upgrade
 
@@ -104,6 +105,7 @@ DEPENDS.gcp = gce-compute-image-packages, python-google-compute-engine, \
 	   python3-google-compute-engine,
 DEPENDS.hyperv = linux-cloud-tools-azure,
 DEPENDS.kvm =
+DEPENDS.oci =
 DEPENDS += $(DEPENDS.$(TARGET_PLATFORM))
 
 #
