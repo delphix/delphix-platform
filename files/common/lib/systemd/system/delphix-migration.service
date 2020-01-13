@@ -49,7 +49,6 @@
 #
 [Unit]
 Description=Delphix OS Migration Service
-PartOf=delphix.target
 DefaultDependencies=no
 After=systemd-udev-settle.service
 After=cloud-init-local.service
@@ -88,7 +87,7 @@ RemainAfterExit=yes
 ExecStartPost=/bin/systemctl disable --no-reload delphix-migration.service
 
 [Install]
-WantedBy=delphix.target
+WantedBy=default.target
 
 #
 # By Setting RequiredBy dependencies in the Install section, this enforces
