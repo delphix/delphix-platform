@@ -20,6 +20,7 @@ MIGRATE_CONFIG_LOG="/var/delphix/migration/log"
 PG_REINDEX=/var/delphix/server/db/force-reindex
 MGMT_SERVICE_OVERRIDE="/run/systemd/system/delphix-mgmt.service.d/override.conf"
 POSTGRES_SERVICE_OVERRIDE="/run/systemd/system/delphix-postgres@default.service.d/override.conf"
+PLATFORM_TYPE=$(cat /var/lib/delphix-appliance/platform)
 
 # shellcheck disable=SC1091
 . /opt/delphix/server/bin/upgrade/dx_upg_stress_options --source
@@ -92,7 +93,7 @@ function perform_migration() {
 		#
 		BY_ID_LINK="/dev/disk/by-id"
 		AZURE_LINK="/dev/disk/azure"
-		if [[ -d "$AZURE_LINK" ]]; then
+		if [[ "$PLATFORM_TYPE" == "azure" && -d "$AZURE_LINK" ]]; then
 			dir_array=()
 			while read -r dir; do
 				dir_array+=(-d)
@@ -101,7 +102,7 @@ function perform_migration() {
 			echo "zpool import -fN ${dir_array[*]} domain0"
 			zpool import -fN "${dir_array[@]}" domain0 ||
 				die "Failed to import domain0 by azure link"
-		elif [[ -d "$BY_ID_LINK" ]]; then
+		elif [[ "$PLATFORM_TYPE" != "aws" && -d "$BY_ID_LINK" ]]; then
 			echo "zpool import -fN -d $BY_ID_LINK domain0"
 			zpool import -fN -d $BY_ID_LINK domain0 ||
 				die "Failed to import domain0 by-id"
