@@ -467,7 +467,10 @@
 #
 # Enable CRA for external variants
 #
-- command: pam-auth-update --enable challenge-response
+- command: pam-auth-update {{ item }}
+  with_items:
+  - --enable challenge-response
+  - --remove unix
   when:
     - variant is regex("external-.*")
 
