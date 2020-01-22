@@ -133,6 +133,7 @@ DEPENDS += bcc-tools, \
 	   jq, \
 	   kdump-tools, \
 	   makedumpfile-dbgsym, \
+	   mtr, \
 	   libkdumpfile, \
 	   libkdumpfile-dbgsym, \
 	   lsof, \
@@ -157,6 +158,7 @@ DEPENDS += bcc-tools, \
 	   sysstat, \
 	   tmux, \
 	   trace-cmd, \
+	   traceroute, \
 	   tshark, \
 	   vim
 
