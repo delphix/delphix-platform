@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2019 Delphix
+# Copyright 2019, 2020 Delphix
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ function die() {
 
 function usage() {
 	echo "$(basename "$0"): $*" >&2
-	echo "Usage: $(basename "$0") [-f] <variant>"
+	echo "Usage: $(basename "$0") [-f] [-b branch] <variant>"
 	exit 2
 }
 
@@ -31,9 +31,11 @@ function cleanup() {
 }
 
 opt_f=false
-while getopts ':f' c; do
+opt_b=master
+while getopts ':fb:' c; do
 	case "$c" in
 	f) eval "opt_$c=true" ;;
+	b) eval "opt_$c=$OPTARG" ;;
 	*) usage "illegal option -- $OPTARG" ;;
 	esac
 done
@@ -53,7 +55,7 @@ $opt_f && rm -f "latest" >/dev/null 2>&1
 trap cleanup EXIT
 
 aws s3 cp \
-	"s3://snapshot-de-images/builds/jenkins-ops/devops-gate/master/appliance-build/master/post-push/latest" \
+	"s3://snapshot-de-images/builds/jenkins-ops/devops-gate/master/appliance-build/$opt_b/post-push/latest" \
 	. || die "failed to download file: 'latest'"
 
 $opt_f && rm -f "$1.upgrade.tar" >/dev/null 2>&1
