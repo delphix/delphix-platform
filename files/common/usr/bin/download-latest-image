@@ -22,7 +22,7 @@ function die() {
 
 function usage() {
 	echo "$(basename "$0"): $*" >&2
-	echo "Usage: $(basename "$0") [-f] [-b branch] <variant>"
+	echo "Usage: $(basename "$0") [-f] [-N] [-b branch] <variant>"
 	exit 2
 }
 
@@ -32,9 +32,10 @@ function cleanup() {
 
 opt_f=false
 opt_b=master
-while getopts ':fb:' c; do
+opt_N=false
+while getopts ':fb:N' c; do
 	case "$c" in
-	f) eval "opt_$c=true" ;;
+	f | N) eval "opt_$c=true" ;;
 	b) eval "opt_$c=$OPTARG" ;;
 	*) usage "illegal option -- $OPTARG" ;;
 	esac
@@ -54,8 +55,18 @@ $opt_f && rm -f "latest" >/dev/null 2>&1
 #
 trap cleanup EXIT
 
+#
+# The "-N" option allows the user to specify whether to download the
+# image from the "nightly" build, or use the default "post-push" build.
+#
+if $opt_N; then
+	build=nightly
+else
+	build=post-push
+fi
+
 aws s3 cp \
-	"s3://snapshot-de-images/builds/jenkins-ops/devops-gate/master/appliance-build/$opt_b/post-push/latest" \
+	"s3://snapshot-de-images/builds/jenkins-ops/devops-gate/master/appliance-build/$opt_b/$build/latest" \
 	. || die "failed to download file: 'latest'"
 
 $opt_f && rm -f "$1.upgrade.tar" >/dev/null 2>&1
