@@ -119,7 +119,9 @@ DEPENDS += $(DEPENDS.$(TARGET_PLATFORM))
 # or replaced without regard for backward compatibility.
 #
 DEPENDS += bcc-tools, \
+	   libbcc-dbgsym, \
 	   bpftrace, \
+	   bpftrace-dbgsym, \
 	   crash, \
 	   crash-python, \
 	   dnsutils, \
