@@ -175,7 +175,16 @@ class Migration:
         return sh.zfs('get', '-H', '-o', 'value', 'com.delphix:mgmt_upgrade',
                       root_container).strip()
 
-    def status(self):
+    def _services_status(self):
+        #
+        # Do not print status of services if we have rebooted after a
+        # successful migration. If that is the case, the migration service
+        # will be disabled.
+        #
+        if self.svc_migration.is_inactive() and os.path.exists(
+                Migration.MIGRATION_COMPLETED):
+            return
+
         Service.print_header()
         for service in self.services:
             service.pretty_print_state()
@@ -187,6 +196,12 @@ class Migration:
                 print('Run "sudo journalctl -u %s" to find out more.' % service)
                 break
             elif service.is_inactive():
+                # If the migration service has already performed its job it
+                # will disable itself automatically, and it will be inactive
+                # on reboot.
+                if service is self.svc_migration and not os.path.exists(
+                        Migration.PERFORM_MIGRATION):
+                    continue
                 print('Service %s is inactive.' % service)
                 print('Some of its dependencies may be unmet.')
                 print('You can attempt to resume migration with '
@@ -195,6 +210,9 @@ class Migration:
             elif service.is_activating() or service.is_deactivating():
                 print('Migration is in progress, please wait.')
                 break
+
+    def status(self):
+        self._services_status()
 
         mgmt_upgrade_stage = Migration.get_mgmt_upgrade_stage()
         if mgmt_upgrade_stage != '-':
