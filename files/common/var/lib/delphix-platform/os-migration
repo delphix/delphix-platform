@@ -20,6 +20,7 @@ MIGRATE_CONFIG_LOG="/var/delphix/migration/log"
 PG_REINDEX=/var/delphix/server/db/force-reindex
 MGMT_SERVICE_OVERRIDE="/run/systemd/system/delphix-mgmt.service.d/override.conf"
 POSTGRES_SERVICE_OVERRIDE="/run/systemd/system/delphix-postgres@default.service.d/override.conf"
+CLEAR_SHARENFS="/var/lib/delphix-platform/clear-sharenfs"
 PLATFORM_TYPE=$(cat /var/lib/delphix-appliance/platform)
 
 # shellcheck disable=SC1091
@@ -137,8 +138,7 @@ function perform_migration() {
 	# failed to quiesce.
 	#
 	echo "clearing sharenfs properties"
-	zfs inherit -r sharenfs domain0 ||
-		die "failed to clear sharenfs properties"
+	"$CLEAR_SHARENFS" || die "failed to clear sharenfs properties"
 
 	#
 	# domain0/mds is owned by delphix:staff on Illumos, and on Linux

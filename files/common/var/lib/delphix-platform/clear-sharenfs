@@ -1,0 +1,65 @@
+#!/usr/bin/python3
+
+import subprocess
+
+lines = subprocess.check_output(
+    "zfs list -t filesystem -r -H -o name,sharenfs,mounted domain0",
+    shell=True).decode('utf-8').splitlines()
+datasets = [line.split('\t') for line in lines]
+#
+# Filter out datasets with sharenfs == "off" and sharenfs == "-"
+#
+datasets = [ds for ds in datasets if ds[1] not in ('off', '-')]
+
+#
+# List all datasets that have sharenfs property source set to "local".
+# Those are the datasets for which we explicitly set the sharenfs property.
+# By default, datasets have sharenfs property source set to "default", meaning
+# that they inherit whatever value is set on their parent. Therefore we
+# filter out all datasets that do not have sharenfs source set to local since
+# their sharenfs setting will be updated automatically.
+#
+sharenfs_local = subprocess.check_output(
+    "zfs get -r -t filesystem -o name -Hs local sharenfs domain0",
+    shell=True).decode('utf-8').splitlines()
+datasets = [ds for ds in datasets if ds[0] in sharenfs_local]
+
+#
+# We only clear sharenfs for datasets that are mounted as in some cases
+# zfs can mount datasets while clearing their sharenfs property and mount
+# children without mounting the parent datasets first. Given that ZFS
+# automatically creates directories for mountpoints, mounting children
+# before the parents would end up creating sub-directories under their
+# parent's mountpoints and so parents would fail to mount later. This
+# is something we really want to avoid, so as a precaution we make sure
+# that all the datasets that we manipulate are already mounted.
+#
+unmounted_datasets = [ds for ds in datasets if ds[2] != 'yes']
+datasets = [ds for ds in datasets if ds not in unmounted_datasets]
+
+if unmounted_datasets:
+    print("WARNING: Not clearing sharenfs property for the following %d "
+          "datasets because they are unmounted:" % len(unmounted_datasets))
+    for ds in unmounted_datasets:
+        print("  %s" % ds[0])
+
+if datasets:
+    #
+    # We must use zfs inherit to clear the sharenfs property instead
+    # of setting sharenfs=off as doing the latter would set the SOURCE
+    # of the sharenfs property to "local" instead of "default". The
+    # app-stack shares timeflows by setting sharenfs on the timeflows and
+    # letting the setting propagate to its children, however this
+    # would not longer work if SOURCE for the sharenfs property is set to
+    # "local" for the children.
+    #
+    # We want to call zfs inherit on the parent datasets before the children,
+    # as such we sort the dataset names by length before traversing them.
+    #
+    datasets.sort(key=lambda ds: len(ds[0]))
+    print("Clearing sharenfs property for the following %d datasets:"
+          % len(datasets))
+    for ds in datasets:
+        print("  %s" % ds[0])
+        subprocess.check_call(["zfs", "inherit", "sharenfs", ds[0]])
+    print("Clearing sharenfs properties completed.")
