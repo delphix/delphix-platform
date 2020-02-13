@@ -475,6 +475,14 @@
     - variant is regex("external-.*")
 
 #
+# Increase login timeout to give support more time to interact with CRA via the console.
+#
+- lineinfile:
+    path: /etc/login.defs
+    regexp: '^LOGIN_TIMEOUT[\t ]*\d*$'
+    line: 'LOGIN_TIMEOUT    300'
+
+#
 # Configure kdump so that makedumpfile excludes ZFS ARC file data pages
 #
 - lineinfile:
