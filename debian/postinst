@@ -52,18 +52,10 @@ configure)
 	systemctl enable delphix-platform.service
 	systemctl enable systemd-networkd.service
 
-	#
-	# Only enable the delphix-migration service on initial install, not
-	# on upgrade.
-	#
-	if [[ -z "$2" ]]; then
-		systemctl enable delphix-migration.service
-	fi
-
 	if ! id -u postgres >/dev/null; then
 		# When installing postgres, a postgres user is created unless it
 		# already exists. To have a consistent UID accross installations
-		# and to facilitate migration from Illumos we create a postgres
+		# and with systems that were migrated from Illumos, we create a
 		# user with the same UID as in Illumos. The Ubuntu postgres
 		# package requires that the postgres user is also part of the
 		# postgres group. Again, for consistency, we create the postgres
