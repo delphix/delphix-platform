@@ -61,24 +61,38 @@
 
 #
 # We want the quota on the crashdump dataset to be sized accordingly
-# based on the capacity of rpool. Thus, we use this command to query the
-# rpool size, and then use this value later to set the crashdump quota.
+# based on the capacity of rpool and space already used by crashdump.
+# We pick greater of ( 50% of rpool, space used by crashdump).
+# We use the following commands to query the rpool size and used
+# crashdump space, and use these values later to set the crashdump quota.
+# We also bump up the used space by 1GB in case it is currently filling
+# up to avoid a race
+# This is done to ensure its contents can't run rpool out of space
 #
+
+- zfs:
+    name: rpool/crashdump
+    state: present
+  when: not ansible_is_chroot
+
 - command: zpool list -Hpo size rpool
   register: rpool_size_bytes
   when: not ansible_is_chroot
 
-#
-# Reconfigure the crashdump dataset. The initial configuration was performed
-# by appliance build so we only update the configuration here. In particular,
-# we want to enforce a quota to ensure its contents can't run rpool out
-# of space.
-#
+- zfs_facts:
+    name: rpool/crashdump
+    recurse: no
+    parsable: yes
+    properties: used
+    type: filesystem
+  register: crashdump
+  when: not ansible_is_chroot
+
 - zfs:
     name: rpool/crashdump
     state: present
     extra_zfs_properties:
-      quota: "{{ rpool_size_bytes.stdout|int / 2 }}"
+      quota: "{{ [rpool_size_bytes.stdout|int / 2, crashdump.ansible_facts.ansible_zfs_datasets[0].used|int + 1073741824]| max }}"
   when: not ansible_is_chroot
 
 #
