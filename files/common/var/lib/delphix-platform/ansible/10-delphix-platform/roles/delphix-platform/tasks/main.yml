@@ -60,28 +60,6 @@
     mode: 0644
 
 #
-# We want the quota on the crashdump dataset to be sized accordingly
-# based on the capacity of rpool. Thus, we use this command to query the
-# rpool size, and then use this value later to set the crashdump quota.
-#
-- command: zpool list -Hpo size rpool
-  register: rpool_size_bytes
-  when: not ansible_is_chroot
-
-#
-# Reconfigure the crashdump dataset. The initial configuration was performed
-# by appliance build so we only update the configuration here. In particular,
-# we want to enforce a quota to ensure its contents can't run rpool out
-# of space.
-#
-- zfs:
-    name: rpool/crashdump
-    state: present
-    extra_zfs_properties:
-      quota: "{{ rpool_size_bytes.stdout|int / 2 }}"
-  when: not ansible_is_chroot
-
-#
 # Create a world writeable directory for application and kernel core
 # dumps. We want it world writeable because we're sharing one directory
 # for corefiles from any user. Unlike illumos where all appliacation
