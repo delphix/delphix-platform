@@ -63,6 +63,19 @@ function perform_migration() {
 	chown -R root:root /var/delphix/server ||
 		die "Failed to chown /var/delphix/server"
 
+	CRASHDUMP_USED="$(zfs get -Hpo value used rpool/crashdump)"
+	CRASHDUMP_QUOTA="$(echo "$(zpool list -Hpo size rpool) / 2" | bc)"
+	if [[ "$CRASHDUMP_USED" -lt "$CRASHDUMP_QUOTA" ]]; then
+		echo "zfs set quota=${CRASHDUMP_QUOTA}b rpool/crashdump"
+		zfs set quota="${CRASHDUMP_QUOTA}b" rpool/crashdump ||
+			die "Failed to set quota on rpool/crashdump;" \
+				"used ($CRASHDUMP_USED)," \
+				"target quota ($CRASHDUMP_QUOTA)"
+	else
+		echo "note: rpool/crashdump used ($CRASHDUMP_USED) >=" \
+			"target quota ($CRASHDUMP_QUOTA)"
+	fi
+
 	if [[ -d /var/delphix/dmsuite ]]; then
 		echo "moving /var/delphix/dmsuite to /var/delphix/masking"
 		mv -T /var/delphix/dmsuite /var/delphix/masking ||
