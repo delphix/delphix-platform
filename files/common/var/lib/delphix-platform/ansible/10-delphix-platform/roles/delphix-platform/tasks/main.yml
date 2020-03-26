@@ -455,12 +455,54 @@
     line: 'LOGIN_TIMEOUT    300'
 
 #
-# Configure kdump so that makedumpfile excludes ZFS ARC file data pages
+# MAKEDUMP_ARGS - Configure makedumpfile to:
+#       [1] Compress the dump (-c)
+#       [2] Filter out pages that are zero, in the page or private cache,
+#           part of user data, or marked as freed (-d 31)
+#       [3] Print common, error, and report messages (--message-level 22)
+#       [4] Exclude ZFS ARC file data pages
+#           (--private-page-filter 0x2F5ABDF11ECAC4E)
+#       * see man page makedumpfile(8) for more info
+#
+# KDUMP_CMDLINE_APPEND - We first append the default parameters passed
+#       by the kdump-tools package:
+#       [1] Force drivers to reset the underlying device during
+#           initialization (reset_devices)
+#       [2] Run the kdump-tools-dump service that will invoke
+#           makedumpfile (systemd.unit=kdump-tools-dump.service)
+#       [3] We don't intend to use multithreaded programs in the
+#           crash kernel, so in order to save some memory we specify
+#           the number of CPUs to be 1 (nr_cpus=1)
+#       [4] Reduce driver initialization failures due to shared
+#           interrupts in the crash kernel by searching all
+#           handlers when an interrupt is not handled (irqpoll)
+#       [5] Disable the USB subsystem as we won't be needing it
+#           (nousb)
+#       [6] Allow the standard Linux storage driver to function
+#           when running on Hyper-V, otherwise kexec'ing a new
+#           kernel doesn't work (ata_piix.prefer_ms_hyperv=0)
+#           See the following link for more info:
+#           https://support.microsoft.com/ca-es/help/2858695
+#
+#       Then we go ahead and append our own options on top of the
+#       defaults:
+#       [1] If the crash-kernel panics too we don't want to be
+#           stuck there forever. Ensure we reboot when that
+#           happens after 10 seconds (panic=10)
+#
+#       * all of the above can be found in
+#         Documentation/admin-guide/kernel-parameters.txt and
+#         Documentation/kdump/kdump.txt of the Linux Kernel repo.
 #
 - lineinfile:
     path: /etc/default/kdump-tools
-    regexp: '^#?MAKEDUMP_ARGS='
-    line: 'MAKEDUMP_ARGS="-c -d 31 --message-level 22 --private-page-filter 0x2F5ABDF11ECAC4E"'
+    regexp: "{{ item.regex }}"
+    line: "{{ item.line }}"
+  with_items:
+    - regex: '^#?MAKEDUMP_ARGS='
+      line: 'MAKEDUMP_ARGS="-c -d 31 --message-level 22 --private-page-filter 0x2F5ABDF11ECAC4E"'
+    - regex: '^#?KDUMP_CMDLINE_APPEND='
+      line: 'KDUMP_CMDLINE_APPEND="reset_devices systemd.unit=kdump-tools-dump.service nr_cpus=1 irqpoll nousb ata_piix.prefer_ms_hyperv=0 panic=10"'
 
 #
 # Disable all motd scripts except for those provided by Delphix by removing
