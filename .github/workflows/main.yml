@@ -1,0 +1,21 @@
+on: [push, pull_request]
+
+jobs:
+  check-packages:
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+      - run: docker build -t delphix-platform:latest docker
+      - run: ./scripts/docker-run.sh make packages
+  check-shellcheck:
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+      - run: docker build -t delphix-platform:latest docker
+      - run: ./scripts/docker-run.sh make shellcheck
+  check-shfmt:
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+      - run: docker build -t delphix-platform:latest docker
+      - run: ./scripts/docker-run.sh make shfmtcheck
