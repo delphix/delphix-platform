@@ -1,0 +1,53 @@
+#!/bin/bash
+#
+# MIT License
+#
+# This script is based on https://github.com/oogali/ebs-automatic-nvme-mapping,
+# with some modifications by Delphix
+#
+# Copyright (c) 2018 Omachonu Ogali
+# Copyright (c) 2020 Delphix
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#
+
+# To be used with the udev rule: /etc/udev/rules.d/999-aws-ebs-nvme.rules
+
+if [[ ! -x "$(command -v nvme)" ]]; then
+	echo "ERROR: NVME tools not installed." >>/dev/stderr
+	exit 1
+fi
+
+if [[ ! -b ${1} ]]; then
+	echo "ERROR: cannot find block device ${1}" >>/dev/stderr
+	exit 1
+fi
+
+# capture 32 bytes at an offset of 3072 bytes from the raw-binary data
+# not all block devices are extracted with /dev/ prefix
+# use `xvd` prefix instead of `sd`
+# remove all trailing spaces
+nvme_link=$(
+	nvme id-ctrl --raw-binary "${1}" |
+		cut -c3073-3104 |
+		sed 's/^\/dev\///g' |
+		sed 's/sd/xvd/g' |
+		tr -d '[:space:]'
+)
+echo "$nvme_link"
