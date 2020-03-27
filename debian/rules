@@ -105,7 +105,7 @@ DEPENDS += pam-challenge-response, \
 	   pam-challenge-response-dbgsym,
 
 # Platform-specific dependencies
-DEPENDS.aws =
+DEPENDS.aws = nvme-cli,
 DEPENDS.azure = walinuxagent, linux-cloud-tools-azure,
 DEPENDS.esx = open-vm-tools,
 DEPENDS.gcp = gce-compute-image-packages, python-google-compute-engine, \
