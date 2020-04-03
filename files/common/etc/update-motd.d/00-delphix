@@ -1,4 +1,4 @@
 #!/bin/sh
 
-version=$(get-appliance-version | awk -F'+' '{print $1}')
+version=$(get-appliance-version --snapshot)
 printf "Welcome to Delphix %s\\n" "$version"
