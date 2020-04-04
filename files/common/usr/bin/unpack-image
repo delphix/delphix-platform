@@ -110,7 +110,7 @@ for file in SHA256SUMS prepare; do
 	[[ -f "$file" ]] || die 15 "image is corrupt; missing '$file' file"
 done
 
-DELPHIX_SIGNATURE_VERSION=$(/usr/bin/get-appliance-version | cut -d - -f 1 | cut -d . -f 1-2)
+DELPHIX_SIGNATURE_VERSION=$(/usr/bin/get-appliance-version --major)
 
 if [[ -z "$opt_s" ]]; then
 	openssl dgst -sha256 \
