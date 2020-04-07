@@ -80,7 +80,7 @@ UNPACK_DIR=$(mktemp -d -p "$UPDATE_DIR" -t unpack.XXXXXXX)
 [[ -d "$UNPACK_DIR" ]] || die "failed to create unpack directory '$UNPACK_DIR'"
 pushd "$UNPACK_DIR" &>/dev/null || die "'pushd $UNPACK_DIR' failed"
 
-DELPHIX_SIGNATURE_VERSION=$(/usr/bin/get-appliance-version | cut -d - -f 1 | cut -d . -f 1-2)
+DELPHIX_SIGNATURE_VERSION=$(/usr/bin/get-appliance-version --major)
 
 tar -x SHA256SUMS SHA256SUMS.sig."$DELPHIX_SIGNATURE_VERSION" version.info -f "$UPGRADE_IMAGE_PATH" ||
 	die 14 "failed to extract files from upgrade image '$UPGRADE_IMAGE_PATH'"
