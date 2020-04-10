@@ -130,6 +130,22 @@ function perform_migration() {
 		"STRESS_MIGRATION_FAIL_AFTER_DOMAIN0_IMPORT"
 
 	#
+	# The ashift value was stored as a user property on the domain0
+	# dataset so must wait till the pool is imported to read it.
+	# If the value of dlpx:ashift is "-" or "0" then we skip setting
+	# the ashift property. Otherwise, we set the pool-wide ashift
+	# property to the ashift value that was uses prior to migration.
+	# We always remove the user property we set on domain0.
+	#
+	ashift=$(zfs get -Ho value dlpx:ashift domain0)
+	if [[ "$ashift" != "-"  && "$ashift" != "0" ]]; then
+		echo "setting ashift value to $ashift"
+		zpool set ashift=$ashift domain0 ||
+			die "Failed to set ashift value on domain0"
+	fi
+	zfs inherit dlpx:ashift domain0
+
+	#
 	# Note that we must mount the ZFS datasets before clearing sharenfs
 	# as calling after sometimes fails (see DLPX-66005 for more info).
 	#
