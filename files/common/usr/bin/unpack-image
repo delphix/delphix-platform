@@ -86,8 +86,8 @@ shift $((OPTIND - 1))
 IMAGE="$1"
 
 case "$IMAGE" in
-*.upgrade.tar) ;;
-*) die 12 "The upgrade image must be a '.upgrade.tar' file" ;;
+*.tar) ;;
+*) die 12 "The upgrade image must be a '.tar' file" ;;
 esac
 
 UPGRADE_IMAGE_PATH="$(readlink -f "$IMAGE")"
