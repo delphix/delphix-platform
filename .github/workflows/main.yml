@@ -11,14 +11,12 @@ jobs:
     runs-on: ubuntu-18.04
     steps:
       - uses: actions/checkout@v2
-      - run: docker build -t delphix-platform:latest docker
-      - run: ./scripts/docker-run.sh make shellcheck
+      - uses: delphix/actions/shellcheck@master
   check-shfmt:
     runs-on: ubuntu-18.04
     steps:
       - uses: actions/checkout@v2
-      - run: docker build -t delphix-platform:latest docker
-      - run: ./scripts/docker-run.sh make shfmtcheck
+      - uses: delphix/actions/shfmt@master
   check-pylint:
     runs-on: ubuntu-18.04
     steps:

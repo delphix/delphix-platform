@@ -24,11 +24,7 @@ VERSION := $(shell date '+%Y.%m.%d.%H')
 
 .PHONY: \
 	check \
-	package \
-	shellcheck \
-	shfmtcheck
-
-check: shellcheck shfmtcheck
+	package
 
 packages: $(addprefix package-,$(ALL_PLATFORMS))
 
@@ -47,9 +43,3 @@ package-%:
 	done
 
 	@mv -v ../delphix-platform-$*_*_amd64.deb artifacts
-
-shellcheck:
-	shellcheck $$(shfmt -f .)
-
-shfmtcheck:
-	shfmt -d .
