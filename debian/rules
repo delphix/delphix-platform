@@ -104,6 +104,12 @@ DEPENDS += delphix-buildinfo-kernel,
 DEPENDS += pam-challenge-response, \
 	   pam-challenge-response-dbgsym,
 
+#
+# The recovery environment is required for the product to be debuggable in
+# worst-case scenarios.
+#
+DEPENDS += recovery-environment,
+
 # Platform-specific dependencies
 DEPENDS.aws = nvme-cli,
 DEPENDS.azure = walinuxagent, linux-cloud-tools-azure,
