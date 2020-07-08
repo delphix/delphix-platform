@@ -5,8 +5,9 @@ jobs:
     runs-on: ubuntu-18.04
     steps:
       - uses: actions/checkout@v2
-      - run: docker build -t delphix-platform:latest docker
-      - run: ./scripts/docker-run.sh make packages
+      - uses: delphix/actions/linux-pkg-build@master
+        with:
+          package: delphix-platform
   check-shellcheck:
     runs-on: ubuntu-18.04
     steps:
