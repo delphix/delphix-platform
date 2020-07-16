@@ -121,7 +121,6 @@ DEPENDS += $(DEPENDS.$(TARGET_PLATFORM))
 # or replaced without regard for backward compatibility.
 #
 DEPENDS += bcc-tools, \
-	   libbcc-dbgsym, \
 	   bpftrace, \
 	   bpftrace-dbgsym, \
 	   crash, \
@@ -140,15 +139,17 @@ DEPENDS += bcc-tools, \
 	   iotop, \
 	   jq, \
 	   kdump-tools, \
-	   makedumpfile-dbgsym, \
-	   mtr, \
+	   ldap-utils, \
+	   libbcc-dbgsym, \
 	   libkdumpfile, \
 	   libkdumpfile-dbgsym, \
 	   lsof, \
+	   makedumpfile-dbgsym, \
 	   man-db, \
 	   manpages, \
 	   manpages-dev, \
 	   memstat, \
+	   mtr, \
 	   ncdu, \
 	   pciutils, \
 	   performance-diagnostics, \
