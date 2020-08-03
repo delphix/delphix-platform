@@ -22,4 +22,4 @@
 #
 - command: /usr/bin/google_instance_setup
   listen: "gcp config changed"
-  when: not ansible_is_chroot
+  when: ansible_virtualization_type != "systemd-nspawn" and not ansible_is_chroot
