@@ -151,6 +151,7 @@ DEPENDS += bcc-tools, \
 	   ptools, \
 	   ptools-dbgsym, \
 	   pv, \
+	   savedump, \
 	   screen, \
 	   sdb, \
 	   sg3-utils, \
