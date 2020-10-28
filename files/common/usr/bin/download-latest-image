@@ -22,7 +22,7 @@ function die() {
 
 function usage() {
 	echo "$(basename "$0"): $*" >&2
-	echo "Usage: $(basename "$0") [-f] [-N] [-b branch] <variant>"
+	echo "Usage: $(basename "$0") [-f] [-N] [-b branch] [variant]"
 	exit 2
 }
 
@@ -43,10 +43,18 @@ done
 shift $((OPTIND - 1))
 
 [[ $# -gt 1 ]] && usage "too many arguments specified"
-[[ $# -eq 0 ]] && usage "too few arguments specified"
 
 $opt_f && rm -f "latest" >/dev/null 2>&1
 [[ -f "latest" ]] && die "file 'latest' already exists"
+
+VARIANT="$1"
+if [[ -z "$VARIANT" ]]; then
+	PLATFORM=$(cat "/var/lib/delphix-appliance/platform")
+	[[ -n "$PLATFORM" ]] || die "platform could not be determined"
+
+	VARIANT=$(cat "/usr/share/doc/delphix-entire-$PLATFORM/variant")
+	[[ -n "$VARIANT" ]] || die "variant could not be determined"
+fi
 
 #
 # We don't want to delete the "latest" file if it already exists and the
@@ -69,8 +77,8 @@ aws s3 cp \
 	"s3://snapshot-de-images/builds/jenkins-ops/devops-gate/master/appliance-build/$opt_b/$build/latest" \
 	. || die "failed to download file: 'latest'"
 
-$opt_f && rm -f "$1.upgrade.tar" >/dev/null 2>&1
-[[ -f "$1.upgrade.tar" ]] && die "image $1.upgrade.tar already exists"
+$opt_f && rm -f "$VARIANT.upgrade.tar" >/dev/null 2>&1
+[[ -f "$VARIANT.upgrade.tar" ]] && die "image $VARIANT.upgrade.tar already exists"
 
-aws s3 cp "s3://snapshot-de-images/$(cat latest)/upgrade-artifacts/$1.upgrade.tar" . ||
-	die "failed to download file: '$1.upgrade.tar'"
+aws s3 cp "s3://snapshot-de-images/$(cat latest)/upgrade-artifacts/$VARIANT.upgrade.tar" . ||
+	die "failed to download file: '$VARIANT.upgrade.tar'"
