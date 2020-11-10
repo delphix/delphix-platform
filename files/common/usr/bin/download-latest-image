@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2019 Delphix
+# Copyright 2019, 2020 Delphix
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ function die() {
 
 function usage() {
 	echo "$(basename "$0"): $*" >&2
-	echo "Usage: $(basename "$0") [-f] <variant>"
+	echo "Usage: $(basename "$0") [-f] [-N] [-b branch] [variant]"
 	exit 2
 }
 
@@ -31,19 +31,30 @@ function cleanup() {
 }
 
 opt_f=false
-while getopts ':f' c; do
+opt_b=master
+opt_N=false
+while getopts ':fb:N' c; do
 	case "$c" in
-	f) eval "opt_$c=true" ;;
+	f | N) eval "opt_$c=true" ;;
+	b) eval "opt_$c=$OPTARG" ;;
 	*) usage "illegal option -- $OPTARG" ;;
 	esac
 done
 shift $((OPTIND - 1))
 
 [[ $# -gt 1 ]] && usage "too many arguments specified"
-[[ $# -eq 0 ]] && usage "too few arguments specified"
 
 $opt_f && rm -f "latest" >/dev/null 2>&1
 [[ -f "latest" ]] && die "file 'latest' already exists"
+
+VARIANT="$1"
+if [[ -z "$VARIANT" ]]; then
+	PLATFORM=$(cat "/var/lib/delphix-appliance/platform")
+	[[ -n "$PLATFORM" ]] || die "platform could not be determined"
+
+	VARIANT=$(cat "/usr/share/doc/delphix-entire-$PLATFORM/variant")
+	[[ -n "$VARIANT" ]] || die "variant could not be determined"
+fi
 
 #
 # We don't want to delete the "latest" file if it already exists and the
@@ -52,12 +63,22 @@ $opt_f && rm -f "latest" >/dev/null 2>&1
 #
 trap cleanup EXIT
 
+#
+# The "-N" option allows the user to specify whether to download the
+# image from the "nightly" build, or use the default "post-push" build.
+#
+if $opt_N; then
+	build=nightly
+else
+	build=post-push
+fi
+
 aws s3 cp \
-	"s3://snapshot-de-images/builds/jenkins-ops/devops-gate/master/appliance-build/master/post-push/latest" \
+	"s3://snapshot-de-images/builds/jenkins-ops/devops-gate/master/appliance-build/$opt_b/$build/latest" \
 	. || die "failed to download file: 'latest'"
 
-$opt_f && rm -f "$1.upgrade.tar" >/dev/null 2>&1
-[[ -f "$1.upgrade.tar" ]] && die "image $1.upgrade.tar already exists"
+$opt_f && rm -f "$VARIANT.upgrade.tar" >/dev/null 2>&1
+[[ -f "$VARIANT.upgrade.tar" ]] && die "image $VARIANT.upgrade.tar already exists"
 
-aws s3 cp "s3://snapshot-de-images/$(cat latest)/upgrade-artifacts/$1.upgrade.tar" . ||
-	die "failed to download file: '$1.upgrade.tar'"
+aws s3 cp "s3://snapshot-de-images/$(cat latest)/upgrade-artifacts/$VARIANT.upgrade.tar" . ||
+	die "failed to download file: '$VARIANT.upgrade.tar'"
