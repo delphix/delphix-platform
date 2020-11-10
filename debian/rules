@@ -136,6 +136,7 @@ DEPENDS += bcc-tools, \
 	   ldap-utils, \
 	   libkdumpfile, \
 	   libkdumpfile-dbgsym, \
+	   linux-tools-common, \
 	   lsof, \
 	   makedumpfile-dbgsym, \
 	   man-db, \
