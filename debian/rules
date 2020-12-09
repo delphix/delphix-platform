@@ -53,6 +53,7 @@ DEPENDS += ansible, \
 	   debootstrap, \
 	   debsums, \
 	   net-tools, \
+	   open-iscsi, \
 	   openssh-server, \
 	   openssl, \
 	   policykit-1, \
