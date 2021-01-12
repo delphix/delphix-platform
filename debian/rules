@@ -60,7 +60,8 @@ DEPENDS += ansible, \
 	   python3, \
 	   rng-tools, \
 	   systemd-container, \
-	   ubuntu-minimal,
+	   ubuntu-minimal, \
+	   update-notifier-common,
 
 # Debugging symbols for packages pulled in by the the above dependencies
 DEPENDS += systemd-dbgsym, \
