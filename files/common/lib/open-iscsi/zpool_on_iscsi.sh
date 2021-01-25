@@ -5,6 +5,7 @@
 
 #
 # This script checks if any iSCSI devices are in use by an active zfs pool.
+#
 
 PATH=/sbin:/bin
 
