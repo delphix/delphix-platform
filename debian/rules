@@ -64,7 +64,12 @@ DEPENDS += ansible, \
 
 # Debugging symbols for packages pulled in by the the above dependencies
 DEPENDS += systemd-dbgsym, \
+	   libsystemd0-dbgsym, \
+	   libblkid1-dbgsym, \
+	   libmount1-dbgsym, \
+	   libuuid1-dbgsym, \
 	   dbus-dbgsym, \
+	   libdbus-1-3-dbgsym, \
 	   openssh-server-dbgsym, \
 	   openssh-client-dbgsym, \
 	   coreutils-dbgsym, \
@@ -108,6 +113,7 @@ DEPENDS += $(DEPENDS.$(TARGET_PLATFORM))
 #
 DEPENDS += bcc-tools, \
 	   bpftrace, \
+	   bpftrace-dbgsym, \
 	   crash, \
 	   crash-python, \
 	   dnsutils, \
@@ -118,7 +124,6 @@ DEPENDS += bcc-tools, \
 	   ethtool, \
 	   gdb, \
 	   gdb-python, \
-	   glances, \
 	   htop, \
 	   iftop, \
 	   inotify-tools, \
@@ -126,6 +131,7 @@ DEPENDS += bcc-tools, \
 	   jq, \
 	   kdump-tools, \
 	   ldap-utils, \
+	   libbcc-dbgsym, \
 	   libkdumpfile, \
 	   libkdumpfile-dbgsym, \
 	   linux-tools-common, \
