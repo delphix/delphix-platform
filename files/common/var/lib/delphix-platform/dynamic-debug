@@ -11,6 +11,7 @@ cat <<-EOF >/sys/kernel/debug/dynamic_debug/control
 	# iSCSI debug info related to LUN RESETs and iSCSI reconnects.
 	file target_core_tmr.c +p
 	func iscsit_release_commands_from_conn +p
+	func iscsit_handle_dataout_timeout +p
 EOF
 
 echo "pr_debug statements enabled:"
