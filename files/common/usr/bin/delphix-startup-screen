@@ -23,10 +23,12 @@ import curses
 import curses.ascii
 import curses.textpad
 import sys
+import signal
 import os
 import logging
 import subprocess
 from typing import List, Any, Tuple, Generator
+from netifaces import interfaces, ifaddresses, AF_INET
 
 STATUS_HEADER: str = "STATUS\t\t\tSERVICE\t\t\t"
 LAYOUT_STR: str = "Keyboard layout (press 9 to change):"
@@ -201,6 +203,11 @@ def getstatus() -> str:
     status = ""
     for i in getstatus_pair(list(run_svcs("Description"))):
         #
+        # Don't print any inactive services
+        #
+        if i[-1].strip() == "inactive":
+            continue
+        #
         # Switch the state and description
         #
         status += f"{i[-1]}\t{i[0]}\n"
@@ -209,22 +216,17 @@ def getstatus() -> str:
 
 def get_network_status() -> Tuple[str, str]:
     """
-    Returns a tuple of (hostname, ipaddr) for the main interface.
+    Returns a tuple of (hostname, ipaddrs).
     """
 
-    #
-    # We get the primary address based on the default route. The
-    # address we use follows the 'src' key in the output.
-    #
-    cmd = ['ip', 'route', 'show', '0.0.0.0/0']
-    cp = subprocess.run(cmd,
-                        stdout=subprocess.PIPE,
-                        universal_newlines=True,
-                        check=True)
-    output = cp.stdout.split()
-    ipaddr = output[output.index("src") + 1]
+    ipaddrs = []
+    for interface in interfaces():
+        if interface == "lo":
+            continue
+        for link in ifaddresses(interface)[AF_INET]:
+            ipaddrs.append(link['addr'])
     hostname = os.uname()[1]
-    return (hostname, ipaddr)
+    return (hostname, ", ".join(ipaddrs))
 
 
 # pylint: disable-msg=too-many-locals
@@ -239,11 +241,11 @@ def display_status(stdscr, win):
     layout = get_keyboard_layout()
 
     width = X - 10
-    height = Y - 8
+    height = Y - 6
     status = 0
 
     x = int((X - width) / 2) + 2
-    y = (Y - height - 1)
+    y = (Y - height)
 
     win.clear()
     win.box()
@@ -270,10 +272,12 @@ def display_status(stdscr, win):
         sys.stdout.flush()
         sys.stderr.flush()
 
-        (hostname, ipaddr) = get_network_status()
+        (hostname, ipaddrs) = get_network_status()
         netwin.clear()
-        netwin.addstr(0, 0, "Host: http://" + hostname + "/", curses.A_BOLD)
-        netwin.addstr(1, 0, "IP: " + ipaddr, curses.A_BOLD)
+        if hostname:
+            hostname = "https://" + hostname
+        netwin.addstr(0, 0, "Host: " + hostname, curses.A_BOLD)
+        netwin.addstr(1, 0, "IPs: " + ipaddrs, curses.A_BOLD)
         netwin.noutrefresh()
 
         # We get status every 10 secs
@@ -373,7 +377,7 @@ def display_keyboard_layout_selection(stdscr, win):
 #
 # Main function.
 #
-def installer_main(stdscr):
+def console_main(stdscr):
     """
     Main
     """
@@ -389,6 +393,27 @@ def installer_main(stdscr):
 
 
 if __name__ == '__main__':
-    logging.basicConfig(filename=log_file, level=logging.DEBUG)
+    #
+    # We need to ensure that any errors in the rest of the script won't
+    # prevent us from logging into the system.
+    #
+    try:
+        logging.basicConfig(filename=log_file, level=logging.DEBUG)
 
-    curses.wrapper(installer_main)
+        #
+        # Since we are going to invoke the login process directly
+        # from the startup screen, we want to ensure that we ignore
+        # any signals which would cause the status screen to restart.
+        # This way the login prompt behaves the same as if it were
+        # invoked from the getty service.
+        #
+        signal.signal(signal.SIGTTOU, signal.SIG_IGN)
+        signal.signal(signal.SIGTSTP, signal.SIG_IGN)
+        signal.signal(signal.SIGHUP, signal.SIG_IGN)
+        signal.signal(signal.SIGINT, signal.SIG_IGN)
+        signal.signal(signal.SIGQUIT, signal.SIG_IGN)
+
+        curses.wrapper(console_main)
+    finally:
+        login_cmd: List[str] = ['/bin/login', '-p']
+        subprocess.run(login_cmd, shell=False, check=True)
