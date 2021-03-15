@@ -101,8 +101,7 @@ DEPENDS += pam-challenge-response, \
 DEPENDS.aws = nvme-cli,
 DEPENDS.azure = walinuxagent,
 DEPENDS.esx = open-vm-tools,
-DEPENDS.gcp = gce-compute-image-packages, python-google-compute-engine, \
-	   python3-google-compute-engine,
+DEPENDS.gcp = google-compute-engine, google-guest-agent,
 DEPENDS.hyperv =
 DEPENDS.kvm =
 DEPENDS.oci =
