@@ -17,9 +17,11 @@
 
 ---
 #
-# Apply any changes made to the override instance config file. This
+# Apply any changes made to the instance config file. This
 # can only be done when we're on a running gcp instance.
 #
-- command: /usr/bin/google_instance_setup
+- systemd:
+    name: google-guest-agent
+    state: restarted
   listen: "gcp config changed"
   when: ansible_virtualization_type != "systemd-nspawn" and not ansible_is_chroot
