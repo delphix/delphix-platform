@@ -301,13 +301,18 @@
   when: platform == "azure"
 
 #
-# Customize the GCP linux environment.
+# Customize the GCP linux environment. We remove any old template
+# and configuration files if they exist.
 #
-# Update the override file for the GCP instance. This file gets
-# applied dynamically by running google_instance_setup script.
-#
+- file:
+    path: "{{ item }}"
+    state: absent
+  with_items:
+    - /etc/default/instance_configs.cfg.template
+    - /etc/default/instance_configs.cfg
+
 - blockinfile:
-    path: /etc/default/instance_configs.cfg.template
+    path: /etc/default/instance_configs.cfg
     create: yes
     block: |
       #
@@ -327,14 +332,6 @@
   when:
     - platform == "gcp"
   notify: "gcp config changed"
-
-#
-# Make sure that the account daemon is always disabled. The override file
-# above should prevent this and this is designed to catch any corner cases.
-#
-- command: systemctl disable google-accounts-daemon.service
-  when:
-    - platform == "gcp"
 
 #
 # We want the ssh service to start as early as possible during boot up,
