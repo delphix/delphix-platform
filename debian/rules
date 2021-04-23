@@ -114,7 +114,6 @@ DEPENDS += $(DEPENDS.$(TARGET_PLATFORM))
 DEPENDS += bcc-tools, \
 	   bpftrace, \
 	   bpftrace-dbgsym, \
-	   crash, \
 	   crash-python, \
 	   dnsutils, \
 	   drgn, \
