@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-FROM ubuntu:bionic-20180426
+FROM ubuntu:focal-20210416
 
 MAINTAINER Prakash Surya <prakash.surya@delphix.com>
 
