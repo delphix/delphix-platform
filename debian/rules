@@ -108,6 +108,13 @@ DEPENDS.oci =
 DEPENDS += $(DEPENDS.$(TARGET_PLATFORM))
 
 #
+# The delphix-build-info package contains build metadata related to the
+# packages built by Delphix and to the appliance itself. While it is there
+# mostly for human convenience, it may be used by some QA tests.
+#
+DEPENDS += delphix-build-info,
+
+#
 # These packages are tools that are intended for human convenience. The
 # product should not rely on them programmatically. They may be updated
 # or replaced without regard for backward compatibility.
