@@ -101,7 +101,7 @@ pushd "$UNPACK_DIR" &>/dev/null || die "'pushd $UNPACK_DIR' failed"
 
 report_progress_inc 10 "Extracting upgrade image."
 
-tar -xf "$UPGRADE_IMAGE_PATH" ||
+tar --warning=no-timestamp -xf "$UPGRADE_IMAGE_PATH" ||
 	die 14 "failed to extract upgrade image '$UPGRADE_IMAGE_PATH'"
 
 report_progress_inc 40 "Verifying format."
