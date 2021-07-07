@@ -82,7 +82,9 @@ pushd "$UNPACK_DIR" &>/dev/null || die "'pushd $UNPACK_DIR' failed"
 
 DELPHIX_SIGNATURE_VERSION=$(/usr/bin/get-appliance-version --major)
 
-tar -x SHA256SUMS SHA256SUMS.sig."$DELPHIX_SIGNATURE_VERSION" version.info -f "$UPGRADE_IMAGE_PATH" ||
+tar --warning=no-timestamp \
+	-x SHA256SUMS SHA256SUMS.sig."$DELPHIX_SIGNATURE_VERSION" version.info \
+	-f "$UPGRADE_IMAGE_PATH" ||
 	die 14 "failed to extract files from upgrade image '$UPGRADE_IMAGE_PATH'"
 
 for file in SHA256SUMS SHA256SUMS.sig."$DELPHIX_SIGNATURE_VERSION" version.info; do
