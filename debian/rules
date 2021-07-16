@@ -85,13 +85,6 @@ DEPENDS += systemd-dbgsym, \
 DEPENDS += ubuntu-dbgsym-keyring,
 
 #
-# sh module for python. This is not currently used by any utility but is
-# left here for convenience. It was previously used by migrationctl.
-#
-DEPENDS += python3-sh, \
-	   python-sh,
-
-#
 # The CRA PAM module provides an authentication method for the delphix user.
 #
 DEPENDS += pam-challenge-response, \
