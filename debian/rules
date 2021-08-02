@@ -1,6 +1,6 @@
 #!/usr/bin/make -f
 #
-# Copyright 2018, 2020 Delphix
+# Copyright 2018, 2021 Delphix
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -89,6 +89,11 @@ DEPENDS += ubuntu-dbgsym-keyring,
 #
 DEPENDS += pam-challenge-response, \
 	   pam-challenge-response-dbgsym,
+
+#
+# The ca-certificates-java module is a dependency for OpenJDK 11.
+#
+DEPENDS += ca-certificates-java,
 
 # Platform-specific dependencies
 DEPENDS.aws = nvme-cli,
