@@ -1,0 +1,47 @@
+on: [push, pull_request]
+
+jobs:
+  check-packages:
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+      - run: docker build -t delphix-platform:latest docker
+      - run: ./scripts/docker-run.sh make packages
+  check-shellcheck:
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: delphix/actions/shellcheck@master
+  check-shfmt:
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: delphix/actions/shfmt@master
+  check-pylint:
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v1
+        with:
+          python-version: '3.6'
+      - run: python3 -m pip install pylint
+      - run: python3 -m pip install netifaces
+      - run: pylint -d invalid-name,E0611 files/common/usr/bin/delphix-startup-screen
+  check-yapf:
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v1
+        with:
+          python-version: '3.6'
+      - run: python3 -m pip install yapf
+      - run: yapf --diff --style google files/common/usr/bin/delphix-startup-screen
+  check-mypy:
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v1
+        with:
+          python-version: '3.6'
+      - run: python3 -m pip install mypy
+      - run: mypy --ignore-missing-imports files/common/usr/bin/delphix-startup-screen
