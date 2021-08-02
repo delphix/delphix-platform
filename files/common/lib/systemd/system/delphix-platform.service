@@ -27,17 +27,6 @@ ExecStart=/var/lib/delphix-platform/dynamic-debug
 RemainAfterExit=yes
 
 #
-# Although delphix-migration already defines a RequiredBy dependency on
-# delphix-platform, that dependency is only honored when delphix-migration
-# is enabled. If delphix-migration was manually disabled before migration
-# completed, we still want to prevent delphix-platform from running, so
-# it is done with this check. Note that "ConditionPathExists" is not a
-# valid alternative since the result of the check doesn't prevent
-# delphix-platform's dependencies from running.
-#
-ExecStartPre=/bin/bash -xc "test ! -e /var/delphix/migration/perform-migration"
-
-#
 # Please ensure this command remains consistent with the cleanup that
 # must occur on package removal. Please see the package's "prerm" file
 # for more details.

@@ -94,12 +94,6 @@
     extra_zfs_properties:
       mountpoint: /var/dlpx-update
       compression: gzip
-      #
-      # internal-qa migration images are currently 5G in size and internal-dev
-      # are 11.5G. We need double that space as the uploaded image is unpacked
-      # in the same dataset, thus requiring a minimum of 23G. We use 30G to
-      # leave a safety margin of a few GBs.
-      #
       quota: 30g
   when: not ansible_is_chroot
 
