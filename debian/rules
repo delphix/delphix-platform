@@ -53,6 +53,7 @@ DEPENDS += ansible, \
 	   debootstrap, \
 	   debsums, \
 	   net-tools, \
+	   ntp, \
 	   open-iscsi, \
 	   openssh-server, \
 	   openssl, \
