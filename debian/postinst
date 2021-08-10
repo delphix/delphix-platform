@@ -53,6 +53,33 @@ configure)
 	systemctl enable systemd-networkd.service
 	systemctl enable iscsi-name-init.service
 
+	#
+	# There's 3 types of services that we account for:
+	#
+	#  1. Services that are always enabled.
+	#  2. Services that are always disabled.
+	#  3. Services that are disabled by default, but may be
+	#     dynamically enabled.
+	#
+	# For more info, see comment in the preinst script.
+	#
+
+	#
+	# Here we account for services of type (3)
+	#
+	# The systemctl is-enabled will return false if the service is masked,
+	# disabled, or if the service doesn't exist yet. By checking this we will
+	# only unmask and disable the service if it wasn't already enabled.
+	#
+	while read -r svc; do
+		if ! systemctl is-enabled "$svc"; then
+			rm -f "/etc/systemd/system/$svc"
+			systemctl disable "$svc"
+		fi
+	done <<-EOF
+		ntp.service
+	EOF
+
 	if ! id -u postgres >/dev/null; then
 		# When installing postgres, a postgres user is created unless it
 		# already exists. To have a consistent UID accross installations
