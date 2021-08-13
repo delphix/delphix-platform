@@ -54,6 +54,7 @@ DEPENDS += ansible, \
 	   debsums, \
 	   dmidecode, \
 	   net-tools, \
+	   ntp, \
 	   open-iscsi, \
 	   openssh-server, \
 	   openssl, \
