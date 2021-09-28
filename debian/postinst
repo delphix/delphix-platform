@@ -50,6 +50,7 @@ configure)
 	systemctl enable auditd.service
 	systemctl enable delphix.target
 	systemctl enable delphix-platform.service
+	systemctl enable delphix-rpool-upgrade.service
 	systemctl enable systemd-networkd.service
 	systemctl enable iscsi-name-init.service
 
