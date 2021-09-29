@@ -19,6 +19,7 @@ Description=Delphix "rpool" Upgrade Service
 ConditionVirtualization=!container
 PartOf=delphix.target
 After=local-fs.target
+After=delphix-rollback.service
 
 [Service]
 Type=oneshot
