@@ -22,7 +22,7 @@ After=local-fs.target
 
 [Service]
 Type=oneshot
-ExecStart=/sbin/zpool upgrade rpool
+ExecStart=/var/lib/delphix-platform/rpool-upgrade
 RemainAfterExit=yes
 
 [Install]
