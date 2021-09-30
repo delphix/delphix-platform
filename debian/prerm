@@ -27,6 +27,7 @@ upgrade | remove)
 
 	systemctl disable delphix.target
 	systemctl disable delphix-platform.service
+	systemctl disable delphix-rpool-upgrade.service
 
 	#
 	# We also need to remove the "ansible-done" file, to ensure that

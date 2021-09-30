@@ -1,0 +1,8 @@
+#!/bin/bash -eux
+
+while read -r feature; do
+	zpool set "feature@${feature}=enabled" rpool
+done <<-EOF
+	async_destroy
+	lz4_compress
+EOF
