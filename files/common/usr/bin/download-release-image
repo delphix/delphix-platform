@@ -1,0 +1,102 @@
+#!/bin/bash
+#
+# Copyright 2021 Delphix
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+set -o errexit
+set -o pipefail
+
+function die() {
+	echo "$(basename "$0"): $*" >&2
+	exit 1
+}
+
+function usage() {
+	echo "$(basename "$0"): $*" >&2
+	echo -n "Usage: $(basename "$0") [-f] "
+	echo "[-u upgrade verification version] [delphix version] [variant]"
+	exit 2
+}
+
+function cleanup() {
+	rm -f latest
+}
+
+function compare_versions() {
+	dpkg --compare-versions "$@"
+}
+
+function get_upgrade_verification_version() {
+	aws s3 ls "s3://release-de-images/internal-artifacts/$1/" |
+		awk '{print $2}' |
+		sed 's|/$||' |
+		sort --version-sort |
+		tail -n 1
+}
+
+opt_f=false
+opt_u=
+while getopts ':fu:' c; do
+	case "$c" in
+	f) eval "opt_$c=true" ;;
+	u) eval "opt_$c=$OPTARG" ;;
+	*) usage "illegal option -- $OPTARG" ;;
+	esac
+done
+shift $((OPTIND - 1))
+
+[[ $# -lt 1 ]] && usage "too few arguments specified"
+[[ $# -gt 2 ]] && usage "too many arguments specified"
+
+VERSION="$1"
+
+VARIANT="$2"
+if [[ -z "$VARIANT" ]]; then
+	PLATFORM=$(cat "/var/lib/delphix-appliance/platform")
+	[[ -n "$PLATFORM" ]] || die "platform could not be determined"
+
+	VARIANT=$(cat "/usr/share/doc/delphix-entire-$PLATFORM/variant")
+	[[ -n "$VARIANT" ]] || die "variant could not be determined"
+fi
+
+#
+# We don't want to delete the "latest" file if it already exists and the
+# "-f" option isn't specified, so we need to be careful to register this
+# cleanup handler after checking to see if the "-f" option (done above).
+#
+trap cleanup EXIT
+
+S3_URI="s3://release-de-images/internal-artifacts/$VERSION"
+
+#
+# Versions 6.0.2.0 and greater have a seperate upgrade verification
+# version, in addition to the delphix version, so we we need to account
+# for this here.
+#
+if compare_versions "$VERSION" ge "6.0.2.0"; then
+	S3_URI+="/"
+
+	if [[ -n "$opt_u" ]]; then
+		S3_URI+="$opt_u"
+	else
+		S3_URI+="$(get_upgrade_verification_version "$VERSION")"
+	fi
+fi
+
+$opt_f && rm -f "$VARIANT.upgrade.tar" >/dev/null 2>&1
+[[ -f "$VARIANT.upgrade.tar" ]] && die "image $VARIANT.upgrade.tar already exists"
+
+aws s3 cp "$S3_URI/upgrade-artifacts/$VARIANT.upgrade.tar" . ||
+	die "failed to download file: '$VARIANT.upgrade.tar'"
