@@ -74,7 +74,7 @@ else
 fi
 
 aws s3 cp \
-	"s3://snapshot-de-images/builds/jenkins-ops/devops-gate/master/appliance-build/$opt_b/$build/latest" \
+	"s3://snapshot-de-images/builds/jenkins-ops/appliance-build/$opt_b/$build/latest" \
 	. || die "failed to download file: 'latest'"
 
 $opt_f && rm -f "$VARIANT.upgrade.tar" >/dev/null 2>&1
