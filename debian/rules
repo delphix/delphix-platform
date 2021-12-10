@@ -110,6 +110,14 @@ DEPENDS += $(DEPENDS.$(TARGET_PLATFORM))
 DEPENDS += delphix-build-info,
 
 #
+# The usrmerge package modifies the layout of directories under root (/) upon
+# installation, to ensure that a Delphix Engine upgraded to Ubuntu 20.04 has
+# the same directory layout as a Delphix Engine that initially came on
+# Ubuntu 20.04 (or later).
+#
+DEPENDS += usrmerge,
+
+#
 # These packages are tools that are intended for human convenience. The
 # product should not rely on them programmatically. They may be updated
 # or replaced without regard for backward compatibility.
@@ -119,6 +127,7 @@ DEPENDS += aptitude, \
 	   bpftrace, \
 	   bpftrace-dbgsym, \
 	   crash-python, \
+	   delphix-rust, \
 	   dnsutils, \
 	   drgn, \
 	   drgn-dbgsym, \

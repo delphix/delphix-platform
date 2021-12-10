@@ -1,5 +1,5 @@
 #
-# Copyright 2018, 2019 Delphix
+# Copyright 2018, 2021 Delphix
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -151,6 +151,13 @@
 # be flushed and lost prematurely.
 #
 - command: systemctl mask systemd-journald-audit.socket
+
+#
+# The nfs-blkmap.service is disabled by default but since it is wanted
+# by nfs-client.target it will always get started.  We don't use pNFS
+# so mask the nfs-blkmap.service to keep it from running.
+#
+- command: systemctl mask nfs-blkmap.service
 
 #
 # By default, the ulimit for core files is set to 0, and the default

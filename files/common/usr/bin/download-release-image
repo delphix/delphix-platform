@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2019, 2020 Delphix
+# Copyright 2021 Delphix
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,6 +15,9 @@
 # limitations under the License.
 #
 
+set -o errexit
+set -o pipefail
+
 function die() {
 	echo "$(basename "$0"): $*" >&2
 	exit 1
@@ -22,7 +25,8 @@ function die() {
 
 function usage() {
 	echo "$(basename "$0"): $*" >&2
-	echo "Usage: $(basename "$0") [-f] [-N] [-b branch] [variant]"
+	echo -n "Usage: $(basename "$0") [-f] "
+	echo "[-u upgrade verification version] [delphix version] [variant]"
 	exit 2
 }
 
@@ -30,24 +34,35 @@ function cleanup() {
 	rm -f latest
 }
 
+function compare_versions() {
+	dpkg --compare-versions "$@"
+}
+
+function get_upgrade_verification_version() {
+	aws s3 ls "s3://release-de-images/internal-artifacts/$1/" |
+		awk '{print $2}' |
+		sed 's|/$||' |
+		sort --version-sort |
+		tail -n 1
+}
+
 opt_f=false
-opt_b=master
-opt_N=false
-while getopts ':fb:N' c; do
+opt_u=
+while getopts ':fu:' c; do
 	case "$c" in
-	f | N) eval "opt_$c=true" ;;
-	b) eval "opt_$c=$OPTARG" ;;
+	f) eval "opt_$c=true" ;;
+	u) eval "opt_$c=$OPTARG" ;;
 	*) usage "illegal option -- $OPTARG" ;;
 	esac
 done
 shift $((OPTIND - 1))
 
-[[ $# -gt 1 ]] && usage "too many arguments specified"
+[[ $# -lt 1 ]] && usage "too few arguments specified"
+[[ $# -gt 2 ]] && usage "too many arguments specified"
 
-$opt_f && rm -f "latest" >/dev/null 2>&1
-[[ -f "latest" ]] && die "file 'latest' already exists"
+VERSION="$1"
 
-VARIANT="$1"
+VARIANT="$2"
 if [[ -z "$VARIANT" ]]; then
 	PLATFORM=$(cat "/var/lib/delphix-appliance/platform")
 	[[ -n "$PLATFORM" ]] || die "platform could not be determined"
@@ -63,22 +78,25 @@ fi
 #
 trap cleanup EXIT
 
-#
-# The "-N" option allows the user to specify whether to download the
-# image from the "nightly" build, or use the default "post-push" build.
-#
-if $opt_N; then
-	build=nightly
-else
-	build=post-push
-fi
+S3_URI="s3://release-de-images/internal-artifacts/$VERSION"
 
-aws s3 cp \
-	"s3://snapshot-de-images/builds/jenkins-ops/appliance-build/$opt_b/$build/latest" \
-	. || die "failed to download file: 'latest'"
+#
+# Versions 6.0.2.0 and greater have a seperate upgrade verification
+# version, in addition to the delphix version, so we we need to account
+# for this here.
+#
+if compare_versions "$VERSION" ge "6.0.2.0"; then
+	S3_URI+="/"
+
+	if [[ -n "$opt_u" ]]; then
+		S3_URI+="$opt_u"
+	else
+		S3_URI+="$(get_upgrade_verification_version "$VERSION")"
+	fi
+fi
 
 $opt_f && rm -f "$VARIANT.upgrade.tar" >/dev/null 2>&1
 [[ -f "$VARIANT.upgrade.tar" ]] && die "image $VARIANT.upgrade.tar already exists"
 
-aws s3 cp "s3://snapshot-de-images/$(cat latest)/upgrade-artifacts/$VARIANT.upgrade.tar" . ||
+aws s3 cp "$S3_URI/upgrade-artifacts/$VARIANT.upgrade.tar" . ||
 	die "failed to download file: '$VARIANT.upgrade.tar'"
