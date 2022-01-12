@@ -174,6 +174,14 @@
     - '*'
 
 - lineinfile:
+    create: yes
+    path: /etc/security/limits.conf
+    line: "{{ item }} soft nofile 32768"
+  with_items:
+    - 'delphix'
+    - 'root'
+
+- lineinfile:
     path: /etc/ssh/sshd_config
     regexp: "^#?{{ item.key }} "
     line: "{{ item.key }} {{ item.value }}"
