@@ -1,0 +1,17 @@
+#
+# See systemd.network(5) for a description of KeepConfiguration. We make this
+# change here because the default behavior of systemd-networkd starting in
+# Ubuntu 20.04 is to release a DHCP lease upon stopping systemd-networkd (even
+# in the context of a restart). The impact of this is that the system's
+# default route and IP address are removed, and then added back again when the
+# service is started back up, resulting in a brief loss of network
+# connectivity. Delphix, being a critical piece of infrastructure, cannot
+# afford brief loss of connectivity. We thus change the KeepConfiguration
+# setting so that systemd-networkd does not release the lease on stop.
+#
+
+[Match]
+Name=*
+
+[Network]
+KeepConfiguration=dhcp-on-stop
