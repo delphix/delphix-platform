@@ -123,6 +123,7 @@ DEPENDS += usrmerge,
 # or replaced without regard for backward compatibility.
 #
 DEPENDS += aptitude, \
+	   awscli, \
 	   bcc-tools, \
 	   bpftrace, \
 	   bpftrace-dbgsym, \
