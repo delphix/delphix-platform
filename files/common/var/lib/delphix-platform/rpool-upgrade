@@ -5,4 +5,13 @@ while read -r feature; do
 done <<-EOF
 	async_destroy
 	lz4_compress
+	large_blocks
 EOF
+
+#
+# We can't use a 1MB recordsize until the "large_blocks" feature is
+# enabled, which is why we chose to apply this configuration here. This
+# should work for both initial installations, as well as upgrades.
+#
+ROOTFS_CONTAINER="$(dirname "$(zfs list -Hpo name /)")"
+zfs set "recordsize=1MB" "$ROOTFS_CONTAINER/log"
