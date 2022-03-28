@@ -50,9 +50,11 @@ DEPENDS += grub-pc, \
 DEPENDS += ansible, \
 	   auditd, \
 	   cloud-init, \
+	   cron, \
 	   debootstrap, \
 	   debsums, \
 	   dmidecode, \
+	   logrotate, \
 	   net-tools, \
 	   ntp, \
 	   open-iscsi, \
