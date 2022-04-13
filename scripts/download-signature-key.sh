@@ -15,13 +15,6 @@
 # limitations under the License.
 #
 
-TOP=$(git rev-parse --show-toplevel 2>/dev/null)
-
-if [[ -z "$TOP" ]]; then
-	echo "Must be run inside the git repsitory."
-	exit 1
-fi
-
 #
 # As a precaution, we don't use "xtrace" since that would expose the
 # DELPHIX_SIGNATURE_TOKEN environment variable contents to stdout, which
