@@ -49,11 +49,8 @@ $opt_f && rm -f "latest" >/dev/null 2>&1
 
 VARIANT="$1"
 if [[ -z "$VARIANT" ]]; then
-	PLATFORM=$(cat "/var/lib/delphix-appliance/platform")
-	[[ -n "$PLATFORM" ]] || die "platform could not be determined"
-
-	VARIANT=$(cat "/usr/share/doc/delphix-entire-$PLATFORM/variant")
-	[[ -n "$VARIANT" ]] || die "variant could not be determined"
+	VARIANT=$(get-appliance-variant) ||
+		die "variant could not be determined"
 fi
 
 #
