@@ -97,7 +97,7 @@ DEPENDS += pam-challenge-response, \
 
 # Platform-specific dependencies
 DEPENDS.aws = nvme-cli,
-DEPENDS.azure = walinuxagent,
+DEPENDS.azure = walinuxagent, azure-cli,
 DEPENDS.esx = open-vm-tools,
 DEPENDS.gcp = google-compute-engine, google-guest-agent,
 DEPENDS.hyperv =
