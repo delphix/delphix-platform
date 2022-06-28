@@ -50,9 +50,11 @@ DEPENDS += grub-pc, \
 DEPENDS += ansible, \
 	   auditd, \
 	   cloud-init, \
+	   cron, \
 	   debootstrap, \
 	   debsums, \
 	   dmidecode, \
+	   logrotate, \
 	   net-tools, \
 	   ntp, \
 	   open-iscsi, \
@@ -61,6 +63,7 @@ DEPENDS += ansible, \
 	   policykit-1, \
 	   python3, \
 	   rng-tools, \
+	   rsyslog, \
 	   systemd-container, \
 	   ubuntu-minimal, \
 	   update-notifier-common,
@@ -123,6 +126,7 @@ DEPENDS += usrmerge,
 # or replaced without regard for backward compatibility.
 #
 DEPENDS += aptitude, \
+	   awscli, \
 	   bcc-tools, \
 	   bpftrace, \
 	   bpftrace-dbgsym, \
