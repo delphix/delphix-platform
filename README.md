@@ -6,7 +6,7 @@
 
 Run this command on "dlpxdc.co" to create the VM used to do the build:
 
-    $ dc clone-latest --size COMPUTE_LARGE bootstrap-18-04 $USER-bootstrap
+    $ dc clone-latest --size COMPUTE_LARGE bootstrap-20-04 $USER-bootstrap
 
 Log into that VM using the "ubuntu" user, and run these commands:
 
