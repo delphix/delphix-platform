@@ -72,6 +72,29 @@ configure)
 		echo "ERROR: postgres id $(id -u postgres) != 65437" >&2
 		exit 1
 	fi
+
+  # We are switching to MAC address based network interface names ini AWS environment 
+  # from 6.0.10.0 onwards. To handle this change, we leverage the default 
+  # 80-net-setup-link.rules udev rules file. We make a copy of this file under /etc 
+  # and then change the naming policy to MAC address based names. Please see DLPX-75209
+  # for more context on this change.
+  platform_type=$(cat /var/lib/delphix-appliance/platform)
+  if [[ "$platform_type" == "aws" ]]; then
+    cp /usr/lib/udev/rules.d/80-net-setup-link.rules /etc/udev/rules.d
+    rc=$?
+    if [[ "$rc" -ne 0 ]]; then
+      echo "ERROR: Could not copy the /usr/lib/udev/rules.d/80-net-setup-link.rules to /etc"
+      exit 1
+    fi
+    sed -i 's/ID_NET_NAME/ID_NET_NAME_MAC/g' /etc/udev/rules.d/80-net-setup-link.rules
+    rc=$?
+    if [[ "$rc" -ne 0 ]]; then
+      echo "ERROR: Could not update the /etc/udev/rules.d/80-net-setup-link.rules file"
+      exit 1
+    fi
+    update-initramfs -u -t -k $(uname -r)
+  fi
+
 	;;
 esac
 
