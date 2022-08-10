@@ -15,6 +15,9 @@
 # limitations under the License.
 #
 
+DEFAULT_UDEV_NET_SETUP_LINK_DIR="/usr/lib/udev/rules.d"
+MODIFIED_UDEV_NET_SETUP_LINK_DIR="/etc/lib/udev/rules.d"
+
 case $1 in
 configure)
 	systemctl disable apt-daily.service
@@ -74,6 +77,34 @@ configure)
 		echo "ERROR: postgres id $(id -u postgres) != 65437" >&2
 		exit 1
 	fi
+
+  # We are switching to MAC address based network interface names only in AWS environment
+  # from 6.0.10.0 onwards. To handle this change, we leverage the default 80-net-setup-link.rules udev
+  # rules file. We make a copy of this file under /etc and then change the naming policy to MAC address
+  # based names. Please see DLPX-75209 for more context on this change.
+  # Though unlikely, it is still remotely possible that the /usr/lib/udev/rules.d/80-net-setup-link.rules
+  # file either gets removed from the base OS distribution or gets replaced with another file to serve
+  # the exact/similar purpose. We must detect and inspect such a change and update the renaming logic if
+  # needed. Ideally, we should also detect changes in the contents of this file but we doubt there is an
+  # obvious way of accomplishing this today.
+  if [[ ! -e "$DEFAULT_UDEV_NET_SETUP_LINK_DIR"/80-net-setup-link.rules ]]; then
+    echo "$DEFAULT_UDEV_NET_SETUP_LINK_DIR/80-net-setup-link.rules found missing, investigation needed to understand "\
+      "if its location has changed or if the file itself has been replaced with another udev rules file" >&2
+    exit 1
+  fi
+  if [[ "$(get-appliance-platform)" == "aws" ]]; then
+    # If there are any changes in the specific line of the rules file that we are modifying, we fail early
+    # to allow us the opportunity to investigate the changes and update our own changes accordingly.
+    grep "^NAME==\"\", ENV{ID_NET_NAME}\!=\"\", NAME=\"\$env{ID_NET_NAME}\""\
+      "$DEFAULT_UDEV_NET_SETUP_LINK_DIR"/80-net-setup-link.rules
+    if [[ ! -d "$MODIFIED_UDEV_NET_SETUP_LINK_DIR" ]]; then
+      mkdir -p "$MODIFIED_UDEV_NET_SETUP_LINK_DIR"
+    fi
+    cp "$DEFAULT_UDEV_NET_SETUP_LINK_DIR"/80-net-setup-link.rules "$MODIFIED_UDEV_NET_SETUP_LINK_DIR"
+    sed -i 's/ID_NET_NAME/ID_NET_NAME_MAC/g' "$MODIFIED_UDEV_NET_SETUP_LINK_DIR"/80-net-setup-link.rules
+    update-initramfs -u -t -k "$(uname -r)"
+  fi
+
 	;;
 esac
 
