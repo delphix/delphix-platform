@@ -26,8 +26,6 @@ configure)
 	systemctl disable apt-daily-upgrade.service
 	systemctl disable apt-daily-upgrade.timer
 
-	systemctl disable unattended-upgrades.service
-
 	#
 	# We need to make sure that the motd-news.service is disabled. This
 	# service reaches out to a public Ubuntu news service over the public

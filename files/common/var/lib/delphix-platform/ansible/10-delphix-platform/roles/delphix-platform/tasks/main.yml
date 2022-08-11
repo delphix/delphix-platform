@@ -258,6 +258,38 @@
     replace: '#\1'
 
 #
+# Prevent sshd from offering weak message authentication codes to clients.
+#
+# The "MACs" configuration parameter in sshd_config takes a list of algorithms
+# as its parameter. This list may be prefixed by a '+' or '-' operator
+# (indicating that the given list should be appended to or removed from the
+# existing MAC set, respectively), or neither operator (indicating that the
+# given list should replace the existing MAC set). If there already exists a
+# "MACs -..."  line, we can append to this list. If otherwise, we need to add
+# this as a separate line in the configuration.
+#
+- shell: grep -c -E "^MACs(\s+)-" /etc/ssh/sshd_config || true
+  register: grep_sshd_config_macs_to_remove
+
+- shell: grep -c -E "^MACs(\s+)-(.*)hmac-sha1\*,umac-64\*" /etc/ssh/sshd_config || true
+  register: grep_sshd_config_macs_already_removed
+
+- lineinfile:
+    path: /etc/ssh/sshd_config
+    backrefs: yes
+    regexp: '^MACs[\s]+-(.*)$'
+    line: 'MACs -\1,hmac-sha1*,umac-64*'
+  notify: "sshd config changed"
+  when: grep_sshd_config_macs_to_remove.stdout != "0" and grep_sshd_config_macs_already_removed == "0"
+
+- lineinfile:
+    path: /etc/ssh/sshd_config
+    insertafter: EOF
+    line: "MACs -hmac-sha1*,umac-64*"
+  notify: "sshd config changed"
+  when: grep_sshd_config_macs_to_remove.stdout == "0"
+
+#
 # Enable SNMP client tools to load MIBs by default.
 #
 - replace:
