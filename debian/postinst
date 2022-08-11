@@ -16,7 +16,7 @@
 #
 
 DEFAULT_UDEV_NET_SETUP_LINK_DIR="/usr/lib/udev/rules.d"
-MODIFIED_UDEV_NET_SETUP_LINK_DIR="/etc/lib/udev/rules.d"
+MODIFIED_UDEV_NET_SETUP_LINK_DIR="/etc/udev/rules.d"
 
 case $1 in
 configure)
