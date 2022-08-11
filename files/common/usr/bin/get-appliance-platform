@@ -1,6 +1,6 @@
+#!/bin/bash
 #
-#
-# Copyright 2019 Delphix
+# Copyright 2022 Delphix
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,19 +15,20 @@
 # limitations under the License.
 #
 
----
-#
-# Apply any changes made to the instance config file. This
-# can only be done when we're on a running gcp instance.
-#
-- systemd:
-    name: google-guest-agent
-    state: restarted
-  listen: "gcp config changed"
-  when: ansible_virtualization_type != "systemd-nspawn" and not ansible_is_chroot
+function die() {
+	echo "$(basename "$0"): $*" >&2
+	exit 1
+}
 
-- systemd:
-    name: sshd
-    state: reloaded
-  listen: "sshd config changed"
-  when: ansible_virtualization_type != "systemd-nspawn" and not ansible_is_chroot
+function usage() {
+	echo "$(basename "$0"): $*" >&2
+	echo "Usage: $(basename "$0")"
+	exit 2
+}
+
+[[ $# -gt 0 ]] && usage "too many arguments specified"
+
+PLATFORM=$(cat "/var/lib/delphix-appliance/platform")
+[[ -n "$PLATFORM" ]] || die "platform could not be determined"
+
+echo "$PLATFORM"

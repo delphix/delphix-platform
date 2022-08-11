@@ -50,9 +50,11 @@ DEPENDS += grub-pc, \
 DEPENDS += ansible, \
 	   auditd, \
 	   cloud-init, \
+	   cron, \
 	   debootstrap, \
 	   debsums, \
 	   dmidecode, \
+	   logrotate, \
 	   net-tools, \
 	   ntp, \
 	   open-iscsi, \
@@ -61,6 +63,7 @@ DEPENDS += ansible, \
 	   policykit-1, \
 	   python3, \
 	   rng-tools, \
+	   rsyslog, \
 	   systemd-container, \
 	   ubuntu-minimal, \
 	   update-notifier-common,
@@ -94,7 +97,7 @@ DEPENDS += pam-challenge-response, \
 
 # Platform-specific dependencies
 DEPENDS.aws = nvme-cli,
-DEPENDS.azure = walinuxagent,
+DEPENDS.azure = walinuxagent, azure-cli,
 DEPENDS.esx = open-vm-tools,
 DEPENDS.gcp = google-compute-engine, google-guest-agent,
 DEPENDS.hyperv =
@@ -123,6 +126,7 @@ DEPENDS += usrmerge,
 # or replaced without regard for backward compatibility.
 #
 DEPENDS += aptitude, \
+	   awscli, \
 	   bcc-tools, \
 	   bpftrace, \
 	   bpftrace-dbgsym, \
