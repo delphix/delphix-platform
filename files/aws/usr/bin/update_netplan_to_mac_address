@@ -23,8 +23,8 @@ function die()
 }
 
 # We want to process the map file only when we reboot into the new version post upgrade, and not during
-# any other scenario where the systemd-networkd service could get restarted. This requires us to check for
-# the following conditions which are valid only during the first boot into the new version post upgrade.
+# any other scenario where the systemd-networkd service could get restarted. This requires us to check
+# for the following conditions which are valid only after having booted into the new version post upgrade.
 # 1. Existence of the map file, which is generated during the upgrade processing.
 # 2. Existence of mac address based network interface filenames under the /sys/class/net heirarchy.
 # 3. Non-existence of the mac address based network interface names in the local netplan file.
