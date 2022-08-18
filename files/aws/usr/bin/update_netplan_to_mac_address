@@ -22,14 +22,15 @@ function die()
   exit 1
 }
 
-# We want to process the read the map file only when we reboot into the new version post upgrade.
-# This reuires us to check for the following --
-# 1. The existence of the map file, which is generated during upgrade processing on the source engine.
-# 2. The existence of the upgrade.properties file under /var/dlpx-update.
-# 3. The existence of the upgrade type "FULL" in the upgrade.properties file. The upgrade logic
-#    reboots the engine only if the upgrade type is FULL.
-if [[ -e "$INTERFACE_TO_MACADDRESS_MAP_FILE" && -e "$UPGRADE_PROPERTIES_FILE" ]] && \
-      grep -e -q 'UPGRADE_TYPE=FULL' "$UPGRADE_PROPERTIES_FILE" ]]; then
+# We want to process the map file only when we reboot into the new version post upgrade, and not during
+# any other scenario where the systemd-networkd service could get restarted. This requires us to check for
+# the following conditions which are valid only during the first boot into the new version post upgrade.
+# 1. Existence of the map file, which is generated during the upgrade processing.
+# 2. Existence of mac address based network interface filenames under the /sys/class/net heirarchy.
+# 3. Non-existence of the mac address based network interface names in the local netplan file.
+if [[ -e "$INTERFACE_TO_MACADDRESS_MAP_FILE" ]] &&\
+  find /sys/class/net -regextype egrep -regex '.*enx[a-z0-9]{12}$' | read &&\
+  ! egrep 'enx[a-z0-9]{12}' /etc/netplan/10-delphix.yaml; then
   # save the existing netplan file before updating it, could be handy for debugging
   cur_timestamp=$(date +%y%m%d_%h%m%s)
   cp -p "$DLPX_NETPLAN_FILE" /var/tmp/"$DLPX_NETPLAN_FILE"_"$cur_timestamp"
