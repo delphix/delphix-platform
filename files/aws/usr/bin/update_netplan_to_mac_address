@@ -15,6 +15,7 @@
 INTERFACE_TO_MACADDRESS_MAP_FILE="/etc/interface_to_macaddress_map.out"
 DLPX_NETPLAN_FILE="/etc/netplan/10-delphix.yaml"
 UPGRADE_PROPERTIES_FILE="/var/dlpx-update/upgrade.properties"
+SYSFS_NET_DIRECTORY="/sys/class/net"
 
 function die()
 {
@@ -29,8 +30,8 @@ function die()
 # 2. Existence of mac address based network interface filenames under the /sys/class/net heirarchy.
 # 3. Non-existence of the mac address based network interface names in the local netplan file.
 if [[ -e "$INTERFACE_TO_MACADDRESS_MAP_FILE" ]] &&\
-  find /sys/class/net -regextype egrep -regex '.*enx[a-z0-9]{12}$' | read &&\
-  ! egrep 'enx[a-z0-9]{12}' /etc/netplan/10-delphix.yaml; then
+  find "$SYSFS_NET_DIRECTORY" -regextype egrep -regex '.*enx[a-z0-9]{12}$' | read &&\
+  ! egrep 'enx[a-z0-9]{12}' "$DLPX_NETPLAN_FILE"; then
   # save the existing netplan file before updating it, could be handy for debugging
   cur_timestamp=$(date +%y%m%d_%h%m%s)
   cp -p "$DLPX_NETPLAN_FILE" /var/tmp/"$DLPX_NETPLAN_FILE"_"$cur_timestamp"
