@@ -23,12 +23,12 @@ function die()
   exit 1
 }
 
-# We want to process the map file only when we reboot into the new version post upgrade, and not during
-# any other scenario where the systemd-networkd service could get restarted. This requires us to check
-# for the following conditions which are valid only after having booted into the new version post upgrade.
+# We want to process the map file only when we boot into the new version post upgrade, and not during
+# any other scenario where the systemd-networkd service is restarted. This necessitates check for the
+# following conditions which are valid only we boot into the new version post upgrade.
 # 1. Existence of the map file, which is generated during the upgrade processing.
 # 2. Existence of mac address based network interface filenames under the /sys/class/net heirarchy.
-# 3. Non-existence of the mac address based network interface names in the local netplan file.
+# 3. The netplan file /etc/netplan/10-delphix.yaml should not contain mac address based interface names.
 if [[ -e "$INTERFACE_TO_MACADDRESS_MAP_FILE" ]] &&\
   find "$SYSFS_NET_DIRECTORY" -regextype egrep -regex '.*enx[a-z0-9]{12}$' | read &&\
   ! egrep 'enx[a-z0-9]{12}' "$DLPX_NETPLAN_FILE"; then
@@ -46,7 +46,7 @@ if [[ -e "$INTERFACE_TO_MACADDRESS_MAP_FILE" ]] &&\
     sed -i "s/$ifname/$macname1/g" "$DLPX_NETPLAN_FILE" || \
       die "Could not modify $ifname to $macname in the netplan file"
   done < "$INTERFACE_TO_MACADDRESS_MAP_FILE"
-  echo "Updated all entries from interface names to mac addresses" >>/var/log/syslog 2>&1
+  echo "Updated all the interface names to mac address based names" >>/var/log/syslog 2>&1
 
   # After updating the netplan file, we must call "netplan generate" to generate new link files under
   # /run/systemd/network which will be consumed by the systemd-networkd to bring up the network interfaces
