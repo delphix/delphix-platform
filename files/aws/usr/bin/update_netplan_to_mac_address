@@ -1,0 +1,57 @@
+#!/bin/bash
+#
+# Copyright (c) 2022 by Delphix. All rights reserved.
+#
+
+# 1. This script is applicable only for Upgrade scenarios in AWS deployments
+# 2. The fix for DLPX-75209 shifts to use mac addresses instead of canonical network
+# interface names. To handle this change for upgrades, we save a map from interface
+# names to their mac addresses. Post reboot, this script will be called as part of
+# the PreExecStart directive in systemd-networkd service.
+# 3. The script takes the map and matches the keys with the existing interface names
+# in the netplan file, and for each such match, replaces the interface name with the
+# corresponding mac address stored in the map file
+
+INTERFACE_TO_MACADDRESS_MAP_FILE="/etc/interface_to_macaddress_map.out"
+DLPX_NETPLAN_FILE="/etc/netplan/10-delphix.yaml"
+UPGRADE_PROPERTIES_FILE="/var/dlpx-update/upgrade.properties"
+SYSFS_NET_DIRECTORY="/sys/class/net"
+
+function die()
+{
+  echo "$(basename $0): $@" >&2
+  exit 1
+}
+
+# We want to process the map file only when we boot into the new version post upgrade, and not during
+# any other scenario where the systemd-networkd service is restarted. This necessitates check for the
+# following conditions which are valid only we boot into the new version post upgrade.
+# 1. Existence of the map file, which is generated during the upgrade processing.
+# 2. Existence of mac address based network interface filenames under the /sys/class/net heirarchy.
+# 3. The netplan file /etc/netplan/10-delphix.yaml should not contain mac address based interface names.
+if [[ -e "$INTERFACE_TO_MACADDRESS_MAP_FILE" ]] &&\
+  find "$SYSFS_NET_DIRECTORY" -regextype egrep -regex '.*enx[a-z0-9]{12}$' | read &&\
+  ! egrep 'enx[a-z0-9]{12}' "$DLPX_NETPLAN_FILE"; then
+  # save the existing netplan file before updating it, could be handy for debugging
+  cur_timestamp=$(date +%y%m%d_%h%m%s)
+  cp -p "$DLPX_NETPLAN_FILE" /var/tmp/"$DLPX_NETPLAN_FILE"_"$cur_timestamp"
+
+  # Update the netplan file with MAC based interface names
+  while IFS= read -r line; do
+    ifname=$(echo $line | awk '{print $1}')
+    macname=$(echo $line | awk '{print $2}')
+    macname1="enx""$macname"
+    echo "Modifying $ifname to $macname1 in the netplan file" >>/var/log/syslog 2>&1
+    grep -n "$ifname" "$DLPX_NETPLAN_FILE" || die "Did not find $ifname in netplan file"
+    sed -i "s/$ifname/$macname1/g" "$DLPX_NETPLAN_FILE" || \
+      die "Could not modify $ifname to $macname in the netplan file"
+  done < "$INTERFACE_TO_MACADDRESS_MAP_FILE"
+  echo "Updated all the interface names to mac address based names" >>/var/log/syslog 2>&1
+
+  # After updating the netplan file, we must call "netplan generate" to generate new link files under
+  # /run/systemd/network which will be consumed by the systemd-networkd to bring up the network interfaces
+  netplan generate || die "Failed to run netplan generate command"
+
+  # prevent conversion attempts on subsequent reboots
+  rm "$INTERFACE_TO_MACADDRESS_MAP_FILE" || die "Failed to remove the $INTERFACE_TO_MACADDRESS_MAP_FILE file"
+fi
