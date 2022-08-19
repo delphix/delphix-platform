@@ -101,6 +101,7 @@ configure)
     cp "$DEFAULT_UDEV_NET_SETUP_LINK_DIR"/80-net-setup-link.rules "$MODIFIED_UDEV_NET_SETUP_LINK_DIR"
     sed -i 's/ID_NET_NAME/ID_NET_NAME_MAC/g' "$MODIFIED_UDEV_NET_SETUP_LINK_DIR"/80-net-setup-link.rules
     update-initramfs -u -t -k "$(uname -r)"
+
   fi
 
 	;;
