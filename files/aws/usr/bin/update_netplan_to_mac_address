@@ -17,7 +17,7 @@ DLPX_NETPLAN_FILE="/etc/netplan/10-delphix.yaml"
 SYSFS_NET_DIRECTORY="/sys/class/net"
 
 function die() {
-	echo "$(basename "$0"): "$*"" >&2
+	echo "$(basename "$0"): $*" >&2
 	exit 1
 }
 
