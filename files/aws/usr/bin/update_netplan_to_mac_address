@@ -17,7 +17,7 @@ DLPX_NETPLAN_FILE="/etc/netplan/10-delphix.yaml"
 SYSFS_NET_DIRECTORY="/sys/class/net"
 
 function die() {
-	echo "$(basename $0): $@" >&2
+	echo "$(basename "$0"): $@" >&2
 	exit 1
 }
 
@@ -27,21 +27,21 @@ function die() {
 # 1. Existence of the map file, which is generated during the upgrade processing.
 # 2. Existence of mac address based network interface filenames under the /sys/class/net heirarchy.
 # 3. The netplan file /etc/netplan/10-delphix.yaml should not contain mac address based interface names.
-if [[ -e "$INTERFACE_TO_MACADDRESS_MAP_FILE" ]] &&
-	find "$SYSFS_NET_DIRECTORY" -regextype egrep -regex '.*enx[a-z0-9]{12}$' | read &&
-	! egrep 'enx[a-z0-9]{12}' "$DLPX_NETPLAN_FILE"; then
+if [[ -e "$INTERFACE_TO_MACADDRESS_MAP_FILE" ]] &&\
+	find "$SYSFS_NET_DIRECTORY" -regextype egrep -regex '.*enx[a-z0-9]{12}$' | read -r &&\
+	! grep -E 'enx[a-z0-9]{12}' "$DLPX_NETPLAN_FILE"; then
 	# save the existing netplan file before updating it, could be handy for debugging
 	cur_timestamp=$(date +%y%m%d_%h%m%s)
 	cp -p "$DLPX_NETPLAN_FILE" /var/tmp/"$DLPX_NETPLAN_FILE"_"$cur_timestamp"
 
 	# Update the netplan file with MAC based interface names
 	while IFS= read -r line; do
-		ifname=$(echo $line | awk '{print $1}')
-		macname=$(echo $line | awk '{print $2}')
+		ifname=$(echo "$line" | awk '{print $1}')
+		macname=$(echo "$line" | awk '{print $2}')
 		macname1="enx""$macname"
 		echo "Modifying $ifname to $macname1 in the netplan file" >>/var/log/syslog 2>&1
 		grep -n "$ifname" "$DLPX_NETPLAN_FILE" || die "Did not find $ifname in netplan file"
-		sed -i "s/$ifname/$macname1/g" "$DLPX_NETPLAN_FILE" ||
+		sed -i "s/$ifname/$macname1/g" "$DLPX_NETPLAN_FILE" ||\
 			die "Could not modify $ifname to $macname in the netplan file"
 	done <"$INTERFACE_TO_MACADDRESS_MAP_FILE"
 	echo "Updated all the interface names to mac address based names" >>/var/log/syslog 2>&1
