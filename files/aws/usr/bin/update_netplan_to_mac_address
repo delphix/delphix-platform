@@ -40,7 +40,7 @@ if [[ -e "$INTERFACE_TO_MACADDRESS_MAP_FILE" ]] &&
 		macname=$(echo "$line" | awk '{print $2}' | tr -d ":")
 		macname="enx""$macname"
 		if grep -q "$ifname:" "$DLPX_NETPLAN_FILE"; then
-			echo "Modifying $ifname to $macname1 in the netplan file" >>/var/log/syslog 2>&1
+			echo "Modifying $ifname to $macname in the netplan file" >>/var/log/syslog 2>&1
 			sed -i "s/$ifname/$macname/g" "$DLPX_NETPLAN_FILE" ||
 				die "Could not modify $ifname to $macname in the netplan file"
 		fi
