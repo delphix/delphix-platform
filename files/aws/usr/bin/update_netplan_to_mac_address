@@ -37,12 +37,12 @@ if [[ -e "$INTERFACE_TO_MACADDRESS_MAP_FILE" ]] &&
 	# Update the netplan file with MAC based interface names
 	while IFS= read -r line; do
 		ifname=$(echo "$line" | awk '{print $1}')
-		  macname=$(echo "$line" | awk '{print $2}' | tr -d ":")
-		  macname="enx""$macname"
-		  if grep -q "$ifname:" "$DLPX_NETPLAN_FILE"; then
-			  echo "Modifying $ifname to $macname in the netplan file" >>/var/log/syslog 2>&1
-			  sed -i "s/$ifname/$macname/g" "$DLPX_NETPLAN_FILE" ||
-			    die "Could not modify $ifname to $macname in the netplan file"
+		macname=$(echo "$line" | awk '{print $2}' | tr -d ":")
+		macname="enx""$macname"
+		if grep -q "$ifname:" "$DLPX_NETPLAN_FILE"; then
+			echo "Modifying $ifname to $macname in the netplan file" >>/var/log/syslog 2>&1
+			sed -i "s/$ifname/$macname/g" "$DLPX_NETPLAN_FILE" ||
+				die "Could not modify $ifname to $macname in the netplan file"
 		fi
 	done <"$INTERFACE_TO_MACADDRESS_MAP_FILE"
 	echo "Updated all the interface names to mac address based names" >>/var/log/syslog 2>&1
