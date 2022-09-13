@@ -41,12 +41,12 @@ if [[ -e "$INTERFACE_TO_MACADDRESS_MAP_FILE" ]] &&
 		macname=$(echo "$line" | awk '{print $2}' | tr -d ":")
 		macname="enx""$macname"
 		if grep -q "$ifname:" "$DLPX_NETPLAN_DIR""$DLPX_NETPLAN_NAME"; then
-			echo "Modifying $ifname to $macname in the netplan file" >>/var/log/syslog 2>&1
+			echo "Modifying $ifname to $macname in the netplan file"
 			sed -i "s/$ifname/$macname/g" "$DLPX_NETPLAN_DIR""$DLPX_NETPLAN_NAME" ||
 				die "Could not modify $ifname to $macname in the netplan file"
 		fi
 	done <"$INTERFACE_TO_MACADDRESS_MAP_FILE"
-	echo "Updated all the interface names to mac address based names" >>/var/log/syslog 2>&1
+	echo "Updated all the interface names to mac address based names"
 
 	# After updating the netplan file, we must call "netplan generate" to generate new link files under
 	# /run/systemd/network which will be consumed by the systemd-networkd to bring up the network interfaces
