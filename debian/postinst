@@ -97,7 +97,7 @@ configure)
 		# slightest change in the contents of the line.
 		sed -i 's/NAME=="", ENV{ID_NET_NAME}!="", NAME="$env{ID_NET_NAME}"/NAME=="", ENV{ID_NET_NAME_MAC}!="", NAME="$env{ID_NET_NAME_MAC}"/' \
 			"$MODIFIED_UDEV_NET_SETUP_LINK_DIR"/80-net-setup-link.rules
-		# The udev rule in the rules file 80-net-setup-link.rules is applied when the initramfs image is loaded during the early
+		# The udev rule in the rules file 80-net-setup-link.rules is applied inside the initramfs image when it is loaded during the
 		# boot process. The update-initramfs command builds a new initramfs image and includes our modified rule in the updated image. 
 		update-initramfs -u -t -k "$(uname -r)"
 	fi
