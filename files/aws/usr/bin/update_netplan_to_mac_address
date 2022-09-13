@@ -12,7 +12,7 @@
 # in the netplan file, and for each such match, replaces the interface name with the
 # corresponding mac address stored in the map file
 
-INTERFACE_TO_MACADDRESS_MAP_FILE="/etc/interface_to_macaddress_map.out"
+INTERFACE_TO_MACADDRESS_MAP_FILE="/var/tmp/delphix-upgrade/interface_to_macaddress_map.out"
 DLPX_NETPLAN_DIR="/etc/netplan/"
 DLPX_NETPLAN_NAME="10-delphix.yaml"
 SYSFS_NET_DIRECTORY="/sys/class/net"
