@@ -12,7 +12,7 @@
 # in the netplan file, and for each such match, replaces the interface name with the
 # corresponding mac address stored in the map file
 
-INTERFACE_TO_MACADDRESS_MAP_FILE="/var/tmp/delphix-upgrade/interface_to_macaddress_map.out"
+INTERFACE_TO_MACADDRESS_MAP_FILE="/etc/interface_to_macaddress_map.out"
 DLPX_NETPLAN_DIR="/etc/netplan/"
 DLPX_NETPLAN_NAME="10-delphix.yaml"
 SYSFS_NET_DIRECTORY="/sys/class/net"
@@ -34,6 +34,9 @@ if [[ -e "$INTERFACE_TO_MACADDRESS_MAP_FILE" ]] &&
 	# save the existing netplan file before updating it, could be handy for debugging
 	cur_timestamp=$(date +%y%m%d_%h%m%s)
 	cp -p "$DLPX_NETPLAN_DIR""$DLPX_NETPLAN_NAME" /var/tmp/"$DLPX_NETPLAN_NAME"_"$cur_timestamp"
+	
+	echo "Dumping contents of the file "$INTERFACE_TO_MACADDRESS_MAP_FILE""
+	cat "$INTERFACE_TO_MACADDRESS_MAP_FILE"
 
 	# Update the netplan file with MAC based interface names
 	while IFS= read -r line; do
