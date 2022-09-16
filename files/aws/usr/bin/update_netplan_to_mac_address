@@ -34,7 +34,6 @@ if [[ -e "$INTERFACE_TO_MACADDRESS_MAP_FILE" ]] &&
 	# save the existing netplan file before updating it, could be handy for debugging
 	cur_timestamp=$(date +%y%m%d_%h%m%s)
 	cp -p "$DLPX_NETPLAN_DIR""$DLPX_NETPLAN_NAME" /var/tmp/"$DLPX_NETPLAN_NAME"_"$cur_timestamp"
-	
 	echo "Dumping contents of the file "$INTERFACE_TO_MACADDRESS_MAP_FILE""
 	cat "$INTERFACE_TO_MACADDRESS_MAP_FILE"
 
