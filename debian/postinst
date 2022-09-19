@@ -23,6 +23,11 @@ configure)
 	systemctl disable apt-daily-upgrade.service
 	systemctl disable apt-daily-upgrade.timer
 
+	systemctl disable ubuntu-advantage.service
+	systemctl disable ua-reboot-cmds.service
+	systemctl disable ua-timer.service
+	systemctl disable ua-timer.timer
+
 	#
 	# We need to make sure that the motd-news.service is disabled. This
 	# service reaches out to a public Ubuntu news service over the public
