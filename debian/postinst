@@ -77,6 +77,38 @@ configure)
 		echo "ERROR: postgres id $(id -u postgres) != 65437" >&2
 		exit 1
 	fi
+
+	# We are switching to MAC address based network interface names only in AWS environment
+	# from 6.0.10.0 onwards. To handle this change, we leverage the default 80-net-setup-link.rules udev
+	# rules file. We make a copy of this file under /etc and then change the naming policy to MAC address
+	# based names. Please see DLPX-75209 for more context on this change.
+	# Though unlikely, it is still remotely possible that the /usr/lib/udev/rules.d/80-net-setup-link.rules
+	# file either gets removed from the base OS distribution or gets replaced with another file to serve
+	# the exact/similar purpose. We must detect and inspect such a change and update the renaming logic if
+	# needed. Ideally, we should also detect changes in the contents of this file but we doubt there is an
+	# obvious way of accomplishing this today.
+	DEFAULT_UDEV_NET_SETUP_LINK_DIR="/usr/lib/udev/rules.d"
+	MODIFIED_UDEV_NET_SETUP_LINK_DIR="/etc/udev/rules.d"
+	if [[ ! -e "$DEFAULT_UDEV_NET_SETUP_LINK_DIR"/80-net-setup-link.rules ]]; then
+		echo "$DEFAULT_UDEV_NET_SETUP_LINK_DIR/80-net-setup-link.rules found missing, investigation needed to understand " \
+			"if its location has changed or if the file itself has been replaced with another udev rules file" >&2
+		exit 1
+	fi
+	if [[ "$(get-appliance-platform)" == "aws" ]]; then
+		mkdir -p "$MODIFIED_UDEV_NET_SETUP_LINK_DIR"
+		cp "$DEFAULT_UDEV_NET_SETUP_LINK_DIR"/80-net-setup-link.rules "$MODIFIED_UDEV_NET_SETUP_LINK_DIR"
+
+		# Any future changes in the line we are updating must be detected and investigated and rule should be updated accordingly.
+		# To accomplish this strict checking, we pass the entire line as an argument to the sed command, which should fail at the
+		# slightest change in the contents of the line.
+		sed -i 's/NAME=="", ENV{ID_NET_NAME}!="", NAME="$env{ID_NET_NAME}"/NAME=="", ENV{ID_NET_NAME_MAC}!="", NAME="$env{ID_NET_NAME_MAC}"/' \
+			"$MODIFIED_UDEV_NET_SETUP_LINK_DIR"/80-net-setup-link.rules
+
+		# The udev rule in the rules file 80-net-setup-link.rules is applied when the initramfs image is loaded during the early
+		# boot process. The update-initramfs command builds a new initramfs image and includes our modified rule in the updated image.
+		update-initramfs -u -t -k "$(uname -r)"
+	fi
+
 	;;
 esac
 
