@@ -15,6 +15,7 @@
 INTERFACE_TO_MACADDRESS_MAP_FILE="/etc/interface_to_macaddress_map.out"
 DLPX_NETPLAN_DIR="/etc/netplan/"
 DLPX_NETPLAN_NAME="10-delphix.yaml"
+DLPX_INTERFACE_NAMES_YAML="/etc/delphix-interface-names.yaml"
 SYSFS_NET_DIRECTORY="/sys/class/net"
 
 function die() {
@@ -46,6 +47,11 @@ if [[ -e "$INTERFACE_TO_MACADDRESS_MAP_FILE" ]] &&
 			echo "Modifying $ifname to $macname in the netplan file"
 			sed -i "s/$ifname/$macname/g" "$DLPX_NETPLAN_DIR""$DLPX_NETPLAN_NAME" ||
 				die "Could not modify $ifname to $macname in the netplan file"
+		fi
+		if grep -q "$ifname:" "$DLPX_INTERFACE_NAMES_YAML"; then
+			echo "Modifying $ifname to $macname in the $DLPX_INTERFACE_NAMES_YAML file"
+			sed -i "s/$ifname/$macname/" "$DLPX_INTERFACE_NAMES_YAML" ||
+				die "Could not modify $ifname to $macname in the $DLPX_INTERFACE_NAMES_YAML file"
 		fi
 	done <"$INTERFACE_TO_MACADDRESS_MAP_FILE"
 	echo "Updated all the interface names to mac address based names"
