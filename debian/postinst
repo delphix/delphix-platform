@@ -101,6 +101,7 @@ configure)
 		# Any future changes in the line we are updating must be detected and investigated and rule should be updated accordingly.
 		# To accomplish this strict checking, we pass the entire line as an argument to the sed command, which should fail at the
 		# slightest change in the contents of the line.
+		# shellcheck disable=SC2016
 		sed -i 's/NAME=="", ENV{ID_NET_NAME}!="", NAME="$env{ID_NET_NAME}"/NAME=="", ENV{ID_NET_NAME_MAC}!="", NAME="$env{ID_NET_NAME_MAC}"/' \
 			"$MODIFIED_UDEV_NET_SETUP_LINK_DIR"/80-net-setup-link.rules
 
