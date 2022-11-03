@@ -1,0 +1,151 @@
+#!/bin/bash
+#
+# Copyright (c) 2022, 2022 by Delphix. All rights reserved.
+#
+
+VAR_DELPHIX_MOUNTPOINT="/var/delphix"
+VAR_DELPHIX_MOUNTPOINT_TMP="/var/delphix-relocation-tmp"
+
+# domain0 shall have enough free space before relocating /var/delphix: 1GB (threshold) + "size of /var/delphix" free space
+# TODO: find a proper value
+SPACE_THRESHOLD_IN_BYTES=1000000000
+
+die()
+{
+	echo "$(basename $0): $*" >&2
+	exit 1
+}
+
+#
+# This function will return mounted filesystem of /var/delphix
+# for example:
+# - before relocation, it returns "rpool/ROOT/delphix.pY64Vhq/data"
+# - after relocation, it returns "domain0/delphix.pY64Vhq/data"
+#
+function get_mounted_var_delphix_dataset() {
+	zfs list -Hpo name $VAR_DELPHIX_MOUNTPOINT
+}
+
+#
+# This function will return container name (i.e. "delphix.xxxxxxx") of /var/delphix dataset
+# for example, if the dataset is "rpool/ROOT/delphix.pY64Vhq/data", it returns delphix.pY64Vhq
+#
+function get_mounted_container_name() {
+	basename "$(dirname $(get_mounted_var_delphix_dataset))"
+}
+
+function get_available_space_in_domain0() {
+	zfs list -Hpo available domain0
+}
+
+function get_dataset_used_space() {
+	[[ -n "$1" ]] || die "failed to provide dataset"
+	local DATASET_NAME="$1"
+	zfs list -Hpo used $DATASET_NAME
+}
+
+function relocate_var_delphix() {
+	#
+	# if domain0 is not existing, that means the engine has not initialized yet, no need to relocate
+	#
+	if ! zpool list domain0 &>/dev/null; then
+		echo "engine is not initialized yet, skip relocating $VAR_DELPHIX_MOUNTPOINT"
+		return
+	fi
+
+	MOUNTED_CONTAINER=$(get_mounted_container_name)
+	VAR_DELPHIX_FS_MOUNTED=$(get_mounted_var_delphix_dataset)
+	echo "got current mounted filesystem of $VAR_DELPHIX_MOUNTPOINT: $VAR_DELPHIX_FS_MOUNTED"
+
+	#
+	# if /var/delphix has already mounted to domain0, no need to relocate it again.
+	#
+	if [[ $VAR_DELPHIX_FS_MOUNTED == "domain0/delphix"* ]]; then
+		echo "$VAR_DELPHIX_MOUNTPOINT has already been in domain0, skip relocating"
+		return
+	fi
+
+	#
+	# check if there is enough space in domain0
+	#
+	VAR_DELPHIX_USED_SPACE=$(get_dataset_used_space $VAR_DELPHIX_FS_MOUNTED)
+	VAR_DELPHIX_REQUIRED_SPACE=$(expr $VAR_DELPHIX_USED_SPACE + $SPACE_THRESHOLD_IN_BYTES)
+	DOMAIN0_AVILABLE_SPACE=$(get_available_space_in_domain0)
+
+	if (( "$DOMAIN0_AVILABLE_SPACE" < "$VAR_DELPHIX_REQUIRED_SPACE")); then
+		die "no enough space to relocate /var/delphix, required at least $VAR_DELPHIX_REQUIRED_SPACE bytes," \
+			"but only $DOMAIN0_AVILABLE_SPACE bytes available"
+	fi
+
+	#
+	# start relocating /var/delphix
+	#
+	VAR_DELPHIX_PARENT_FS="domain0/$MOUNTED_CONTAINER"
+	VAR_DELPHIX_FS_OLD=$VAR_DELPHIX_FS_MOUNTED
+	VAR_DELPHIX_FS_NEW="$VAR_DELPHIX_PARENT_FS/data"
+	echo "start relocating $VAR_DELPHIX_MOUNTPOINT from $VAR_DELPHIX_FS_OLD to $VAR_DELPHIX_FS_NEW"
+
+	#
+	# create parent filesystem domain0/delphix.xxxxxxx
+	#
+	echo "creating parent file system $VAR_DELPHIX_PARENT_FS"
+	zfs create -o canmount=off -o mountpoint=none $VAR_DELPHIX_PARENT_FS ||
+		die "creating parent file system $VAR_DELPHIX_PARENT_FS failed"
+
+	#
+	# create filesystem domain0/delphix.xxxxxxx/data and mount it to temp folder
+	# TODO: set up properties of filesystem, upgrade will need that info
+	echo "creating filesystem $VAR_DELPHIX_FS_NEW and mounting it to temp mountpoint $VAR_DELPHIX_MOUNTPOINT_TMP"
+	zfs create -o mountpoint=$VAR_DELPHIX_MOUNTPOINT_TMP $VAR_DELPHIX_FS_NEW ||
+		die "creating data filesystem $VAR_DELPHIX_FS_NEW failed"
+
+	#
+	# copy files from /var/delphix to temp folder
+	#
+	## TODO: find most suitable flag of rsync
+	echo "copying files from $VAR_DELPHIX_MOUNTPOINT to $VAR_DELPHIX_MOUNTPOINT_TMP"
+	rsync -aAx $VAR_DELPHIX_MOUNTPOINT/* $VAR_DELPHIX_MOUNTPOINT_TMP ||
+		die "copying files from $VAR_DELPHIX_MOUNTPOINT to $VAR_DELPHIX_MOUNTPOINT_TMP failed"
+
+	#
+	# clean up /var/delphix mount record in /etc/fstab, this shall be done before destroying filesystem $VAR_DELPHIX_FS_OLD
+	#
+	echo "cleaning up mount record of /var/delphix in /etc/fstab"
+	sed -i "/\/var\/delphix/d" /etc/fstab ||
+		die "removing mount record of /var/delphix from /ect/fstab failed"
+
+	#
+	# clean old filesystem in rpool to save space
+	# TODO: what if it fails to destroy? for instance, after a failed upgrade - verification?
+	# TODO: destroy will fail with error "dataset is busy" for the first time, but if destroy again, it will succeed.
+	# TODO: based on experiments, it seems destroying filesystem will umount /var/delphix from domain0 as well??? since mountpoint=legacy
+	# TODO: double confirm the space has been freed up
+	LEGACY_FS_TO_DELETE="rpool/ROOT/${MOUNTED_CONTAINER}/data"
+	if [[ $VAR_DELPHIX_FS_OLD == $LEGACY_FS_TO_DELETE ]]; then
+  		echo "destroying legacy filesystem $VAR_DELPHIX_FS_OLD to save space"
+      zfs destroy $VAR_DELPHIX_FS_OLD ||
+      	echo "warning: destroying legacy filesystem $VAR_DELPHIX_FS_OLD failed, please manually clean it"
+  else
+  		# when developer_reset the engine, the /var/delphix will mount to rpool/ROOT/delphix.xxxxxxx/root,
+  		# we can't destroy legacy filesystem in this case
+  		echo "warning: legacy filesystem not expected, expected $LEGACY_FS_TO_DELETE but got $VAR_DELPHIX_FS_OLD, skipped"
+  fi
+
+	#
+	# change mountpoint from temp folder to official folder
+	# since destroy legacy filesystem will umount /var/delphix, so we put setting mointpoint as last step
+	#
+	echo "mounting $VAR_DELPHIX_FS_NEW to $VAR_DELPHIX_MOUNTPOINT"
+	zfs set mountpoint=$VAR_DELPHIX_MOUNTPOINT $VAR_DELPHIX_FS_NEW ||
+		die "change mountpoint of $VAR_DELPHIX_FS_NEW to $VAR_DELPHIX_MOUNTPOINT failed"
+
+	#
+	# clean up temp folder
+	#
+	rm -rf $VAR_DELPHIX_MOUNTPOINT_TMP ||
+		die "cleaning up $VAR_DELPHIX_MOUNTPOINT_TMP failed"
+
+	echo "successfully relocated $VAR_DELPHIX_MOUNTPOINT from $VAR_DELPHIX_FS_OLD to $VAR_DELPHIX_FS_NEW"
+}
+
+relocate_var_delphix
