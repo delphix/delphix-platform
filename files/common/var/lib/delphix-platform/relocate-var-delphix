@@ -1,0 +1,298 @@
+#!/bin/bash
+#
+# Copyright (c) 2022, 2022 by Delphix. All rights reserved.
+#
+
+#
+# TODO: describe the script
+#
+#
+VAR_DELPHIX_MOUNTPOINT="/var/delphix"
+VAR_DELPHIX_MOUNTPOINT_TMP="/var/delphix-relocation-tmp"
+
+MASKING_OUTPUT_MOUNTPOINT="/var/delphix/masking/output"
+MASKING_OUTPUT_MOUNTPOINT_TMP="/var/delphix/masking/output-tmp"
+MASKING_OUTPUT_FS="rpool/masking-output"
+
+# domain0 shall have enough free space before relocating /var/delphix: 1GB (threshold) + "size of /var/delphix" free space
+# TODO: find a proper value, reserve 10% like DOES?
+SPACE_RESERVED_IN_BYTES=1000000000
+
+die()
+{
+	echo "$(basename $0): $*" >&2
+	exit 1
+}
+
+#
+# This function will return mounted filesystem of /var/delphix
+# for example:
+# - before relocation, it returns "rpool/ROOT/delphix.pY64Vhq/data"
+# - after relocation, it returns "domain0/delphix.pY64Vhq/data"
+#
+function get_mounted_var_delphix_dataset() {
+	get_mounted_dataset $VAR_DELPHIX_MOUNTPOINT
+}
+
+#
+# get mounted filesystem of a given mountpoint
+#
+function get_mounted_dataset() {
+	[[ -n "$1" ]] || die "failed to provide mountpoint"
+  local MOUNTPOINT="$1"
+
+  #
+  # we don't use "zfs list -Hpo name $MOUNTPOINT" because it doesn't show correct result for cross-mounting.
+  # (/var/delphix mounts in domain0, while /var/delphix/masking/output mounts in rpool)
+  #
+  # df $MOUNTPOINT | tail -1 | awk '{print $1}'
+  zfs list -Hpo name $MOUNTPOINT
+}
+
+#
+# This function will return container name (i.e. "delphix.xxxxxxx")
+# for example, if the dataset is "rpool/ROOT/delphix.pY64Vhq/root", it returns delphix.pY64Vhq
+#
+function get_mounted_container_name() {
+	basename "$(dirname $(get_mounted_dataset /))"
+}
+
+function get_available_space_in_domain0() {
+	zfs list -Hpo available domain0
+}
+
+function get_dataset_used_space() {
+	[[ -n "$1" ]] || die "failed to provide dataset"
+	local DATASET_NAME="$1"
+	zfs list -Hpo used $DATASET_NAME
+}
+
+#
+# check if there is enough space in domain0
+#
+function domain0_has_enough_space() {
+	echo "checking if domain0 has enough space for relocation"
+
+	local space_used=$(get_dataset_used_space $VAR_DELPHIX_FS_MOUNTED)
+	local space_required=$(expr $space_used + $SPACE_RESERVED_IN_BYTES)
+	local space_available_in_domain0=$(get_available_space_in_domain0)
+
+	if (( "$space_available_in_domain0" < "$space_required")); then
+		echo "error: no enough space to relocate /var/delphix, required at least $space_required bytes," \
+			"but only $space_available_in_domain0 bytes available"
+		return 1
+	fi
+}
+
+function pre_check() {
+	echo "pre-check before relocating /var/delphix"
+
+	#
+	# if domain0 is not existing, that means the engine has not initialized yet, no need to relocate
+	#
+	if ! zpool list domain0 &>/dev/null; then
+		echo "engine is not initialized yet, skipping"
+		return 1
+	fi
+
+
+	VAR_DELPHIX_FS_MOUNTED=$(get_mounted_var_delphix_dataset)
+	echo "detected current mounted filesystem of $VAR_DELPHIX_MOUNTPOINT: $VAR_DELPHIX_FS_MOUNTED"
+
+	#
+	# if "/var/delphix" has already mounted to expected filesystem in domain0, then no need to relocate
+	#
+	MOUNTED_CONTAINER=$(get_mounted_container_name)
+	local expected_fs="domain0/$MOUNTED_CONTAINER/data"
+	if [[ $VAR_DELPHIX_FS_MOUNTED == $expected_fs ]]; then
+		echo "$VAR_DELPHIX_MOUNTPOINT has already been in domain0, skipping"
+		return 1
+	fi
+
+	#
+	# check if there is enough space in domain0 (after relocating masking temp folders)
+	#
+	if ! domain0_has_enough_space; then
+		echo "error: no enough space to relocate /var/delphix, skipping"
+		return 1
+	fi
+
+	#
+	# TODO: we will handle below scenario when developing Repave
+	# when repaving to a new engine, "domain0/delphix.xxxxxxx(A)/data" is already there,
+	# but "/var/delphix" mounts to "rpool/ROOOT/delphix.xxxxxxx(B)/data", we need to:
+	#  - rename "domain0/delphix.xxxxxxx(A)/data" to "domain0/delphix.xxxxxxx(B)/data",
+	#    so its container name is consistent with rpool/ROOT.
+	#  - update "/etc/fstab",
+	#  - mount "domain0/delphix.xxxxxxx(B)/data" to /var/delphix
+	#
+
+	echo "the engine is ready for relocating /var/delphix"
+}
+
+#
+# relocates masking temp folders from domain0 back to rpool, in a separated filesystem.
+#
+# Masking engines have two temp folders:
+#  - "/var/delphix/masking/tmp"
+#  - "/var/delphix/masking/output"
+#
+# since "/var/delphix/masking/tmp" already has a dedicated filesystem "rpool/masking", we don't need to worry about it
+# this function will relocate "/var/delphix/masking/output" to "rpool/masking-output"
+#
+function relocate_masking_temp_folders_to_dedicated_filesystem() {
+	echo "relocating $MASKING_OUTPUT_MOUNTPOINT to $MASKING_OUTPUT_FS"
+	#
+	# if rpool/masking-output already exists, no need to relocate it again.
+	#
+	if zfs list $MASKING_OUTPUT_FS &>/dev/null; then
+		echo "$MASKING_OUTPUT_MOUNTPOINT has already been relocated to $MASKING_OUTPUT_FS, skipped"
+		return
+	fi
+
+	#
+	# create filesystem rpool/masking-output and mount it to a temp folder
+	#
+	echo "creating filesystem $MASKING_OUTPUT_FS and mounting it to temp mountpoint $MASKING_OUTPUT_MOUNTPOINT_TMP"
+	zfs create -o mountpoint=$MASKING_OUTPUT_MOUNTPOINT_TMP $MASKING_OUTPUT_FS ||
+		die "failed to create data filesystem $MASKING_OUTPUT_FS"
+
+	#
+	# Moving files from /var/delphix/masking/output to the temp folder
+	# TODO: move? empty folder: mv -v test01/* test02
+  # mv: cannot stat 'test01/*': No such file or directory
+	echo "copying $MASKING_OUTPUT_MOUNTPOINT to $MASKING_OUTPUT_MOUNTPOINT_TMP"
+	rsync -aAx $MASKING_OUTPUT_MOUNTPOINT/ $MASKING_OUTPUT_MOUNTPOINT_TMP ||
+		die "failed to copy $MASKING_OUTPUT_MOUNTPOINT to $MASKING_OUTPUT_MOUNTPOINT_TMP"
+
+	echo "cleaning up $MASKING_OUTPUT_MOUNTPOINT"
+	rm -rf $MASKING_OUTPUT_MOUNTPOINT/* ||
+    		die "failed to clean up $MASKING_OUTPUT_MOUNTPOINT"
+
+	echo "mounting $MASKING_OUTPUT_FS to $MASKING_OUTPUT_MOUNTPOINT"
+	zfs set mountpoint=$MASKING_OUTPUT_MOUNTPOINT $MASKING_OUTPUT_FS ||
+		die "failed to change mountpoint of $MASKING_OUTPUT_FS to $MASKING_OUTPUT_MOUNTPOINT"
+
+	#
+	# delete the temp folder
+	#
+	rm -rf $MASKING_OUTPUT_MOUNTPOINT_TMP ||
+		die "failed to clean up $MASKING_OUTPUT_MOUNTPOINT_TMP"
+
+	echo "successfully relocated $MASKING_OUTPUT_MOUNTPOINT to $MASKING_OUTPUT_FS"
+}
+
+#
+# destroy legacy filesystem of /var/delphix in rpool
+#
+function destroy_legacy_var_delphix() {
+
+	MOUNTED_CONTAINER=$(get_mounted_container_name)
+  VAR_DELPHIX_FS_OLD="rpool/ROOT/${MOUNTED_CONTAINER}/data"
+
+	echo "destroying legacy filesystem $VAR_DELPHIX_FS_OLD"
+	#
+	# clean /var/delphix mount record in /etc/fstab
+	#
+	echo "removing mount record of /var/delphix from /ect/fstab"
+	sed -i "/\/var\/delphix/d" /etc/fstab ||
+  		die "failed to removing mount record of /var/delphix from /ect/fstab"
+
+	#
+	# check if legacy filesystem of /var/delphix exists or not.
+	#	 - if not existing, we are good, just return
+	#  - if not existing, we will have to destroy it
+	if zfs list $VAR_DELPHIX_FS_OLD &>/dev/null; then
+		zfs destroy $VAR_DELPHIX_FS_OLD ||
+			die "failed to destroy legacy filesystem $VAR_DELPHIX_FS_OLD"
+		echo "successfully destroyed legacy filesystem of /var/delphix in rpool"
+	fi
+}
+
+#
+# relocate /var/delphix to domain0
+#
+function relocate_var_delphix_to_domain0() {
+	echo "start relocating /var/delphix to domain0"
+
+	MOUNTED_CONTAINER=$(get_mounted_container_name)
+  VAR_DELPHIX_FS_NEW="domain0/$MOUNTED_CONTAINER/data"
+
+	#
+	# create filesystem domain0/delphix.xxxxxxx/data
+	#  - step 1: create parent fs "domain0/delphix.xxxxxxx" first
+	#  - step 2: create fs "domain0/delphix.xxxxxxx/data", mount it to the temp folder
+	#  - step 3: TODO: copy properties to mark the version (like 6.0.17.0, 7.0.0.0, ...)
+	#            of domain0, in case Repave needs it
+	#
+	local parent_fs="domain0/$MOUNTED_CONTAINER"
+	echo "creating parent file system $parent_fs"
+	zfs create -o canmount=off -o mountpoint=none $parent_fs ||
+		die "failed to create parent file system $parent_fs"
+
+	echo "creating file system $VAR_DELPHIX_FS_NEW"
+	zfs create -o mountpoint=$VAR_DELPHIX_MOUNTPOINT_TMP $VAR_DELPHIX_FS_NEW ||
+		die "failed to create data filesystem $VAR_DELPHIX_FS_NEW"
+
+
+	#
+	# Copy files from /var/delphix to temp folder
+	# rsync flags
+	#		-a: transfer entire directory hierarchies (permissions, modes, symbolic links...)
+	#   -A: preserve ACLs
+	#		-x: --one-file-system, don't cross filesystem boundaries. Masking engine has a temp folder /var/delphix/masking/tmp,
+	#				it has its own filesystem "rpool/masking", we want to leave this temp folder in rpool as it contains
+	#	     	a large amount of temp stuff generated by masking engine.
+	echo "copying files from $VAR_DELPHIX_MOUNTPOINT to $VAR_DELPHIX_MOUNTPOINT_TMP"
+	rsync -aAx $VAR_DELPHIX_MOUNTPOINT/ $VAR_DELPHIX_MOUNTPOINT_TMP ||
+		die "failed to copying files from $VAR_DELPHIX_MOUNTPOINT to $VAR_DELPHIX_MOUNTPOINT_TMP"
+
+  #
+	# umount legacy /var/delphix in rpool,
+	# since the mountpoint of "rpool/ROOT/delphix.xxxxxxx/data" is "legacy",
+	# we use command "umount" here instead of "zfs umount"
+	#
+	echo "umounting legacy /var/delphix in rpool"
+	umount /var/delphix ||
+  		die "failed to umount legacy /var/delphix in rpool"
+
+	#
+	# change mountpoint from temp folder to official folder
+	#
+	echo "changing mountpoint of $VAR_DELPHIX_FS_NEW to $VAR_DELPHIX_MOUNTPOINT"
+	zfs set mountpoint=$VAR_DELPHIX_MOUNTPOINT $VAR_DELPHIX_FS_NEW ||
+  		die "failed to change mountpoint of $VAR_DELPHIX_FS_NEW to $VAR_DELPHIX_MOUNTPOINT"
+
+	#
+	# clean up temp folder
+	#
+	echo "cleaning up $VAR_DELPHIX_MOUNTPOINT_TMP"
+	rm -rf $VAR_DELPHIX_MOUNTPOINT_TMP ||
+		die "failed to clean up $VAR_DELPHIX_MOUNTPOINT_TMP"
+
+	echo "successfully relocated /var/delphix to domain0"
+}
+
+function run() {
+	# pre check if engine is ready for relocating /var/delphix, if not, skip.
+	if ! pre_check; then
+		return
+	fi
+
+	#
+	# relocate /var/delphix to domain0
+	#
+	relocate_var_delphix_to_domain0
+
+	#
+	# clean up legacy filesystem of /var/delphix in rpool to save space
+	#
+	destroy_legacy_var_delphix
+
+	#
+	# relocate temp folders of masking engine before calculating space
+	# those temp folders contain a lot of stuff. we want to keep them in rpool.
+	relocate_masking_temp_folders_to_dedicated_filesystem
+}
+
+run
