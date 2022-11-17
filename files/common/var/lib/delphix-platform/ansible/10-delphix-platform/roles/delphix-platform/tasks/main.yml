@@ -563,3 +563,10 @@
     path: "{{ item.path }}"
     mode: 0644
   with_items: '{{ motd_files.files }}'
+
+#
+# We've hit build failures when swap space is not available, so we've
+# opted to automatically configure swap space here.
+#
+- include_tasks: swap.yml
+  when: variant == "internal-buildserver"
