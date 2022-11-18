@@ -37,5 +37,5 @@ for attempt in $(seq "$ATTEMPTS"); do
 		exit $retval
 	fi
 	echo "Attempt $attempt failed, trying again after a small nap."
-	sleep "$delay"
+	sleep "$DELAY"
 done
