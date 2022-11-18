@@ -18,8 +18,6 @@
 # workaround sporadic segmentation fault core dump issues with the command.
 #
 
-set -o xtrace
-
 ATTEMPTS=5
 DELAY=1
 
