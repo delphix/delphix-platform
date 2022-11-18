@@ -569,4 +569,6 @@
 # opted to automatically configure swap space here.
 #
 - include_tasks: swap.yml
-  when: variant == "internal-buildserver"
+  when:
+    - variant == "internal-buildserver"
+    - not ansible_is_chroot
