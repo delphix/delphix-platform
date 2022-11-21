@@ -564,11 +564,7 @@
     mode: 0644
   with_items: '{{ motd_files.files }}'
 
-#
-# We've hit build failures when swap space is not available, so we've
-# opted to automatically configure swap space here.
-#
-- include_tasks: swap.yml
+- include_tasks: buildserver.yml
   when:
     - variant == "internal-buildserver"
     - not ansible_is_chroot

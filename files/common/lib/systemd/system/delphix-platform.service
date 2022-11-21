@@ -17,7 +17,7 @@
 [Unit]
 Description=Delphix Appliance Platform Service
 PartOf=delphix.target
-After=local-fs.target
+After=local-fs.target delphix-rpool-upgrade.service
 Before=rsync.service docker.service
 
 [Service]
