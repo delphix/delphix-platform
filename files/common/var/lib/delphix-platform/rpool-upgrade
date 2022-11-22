@@ -5,5 +5,5 @@ while read -r feature; do
 done <<-EOF
 	async_destroy
 	lz4_compress
-	large_block
+	large_blocks
 EOF
