@@ -20,6 +20,7 @@ set -o pipefail
 SOURCE_DIRECTORY="$(readlink -f "${BASH_SOURCE%/*}")"
 DLPX_ANSIBLE_DIRECTORY="${DLPX_ANSIBLE_DIRECTORY:-$SOURCE_DIRECTORY}"
 ROOT_FILESYSTEM=$(zfs list -Ho name /)
+ROOT_CONTAINER=$(dirname "$ROOT_FILESYSTEM")
 
 #
 # If we are running as part of live-build, the root of the appliance's
@@ -44,6 +45,7 @@ function apply_playbook() {
 		-c "$DLPX_ANSIBLE_CONNECTION" \
 		-i "$DLPX_ANSIBLE_INVENTORY" \
 		-e "root_filesystem=$ROOT_FILESYSTEM" \
+		-e "root_container=$ROOT_CONTAINER" \
 		-e "platform=$PLATFORM" \
 		-e "variant=$VARIANT" \
 		"$1"; then
