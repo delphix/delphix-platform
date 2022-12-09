@@ -69,9 +69,7 @@ DEPENDS += ansible, \
 	   update-notifier-common,
 
 # Debugging symbols for packages pulled in by the the above dependencies
-DEPENDS += systemd-dbgsym, \
-	   libsystemd0-dbgsym, \
-	   libblkid1-dbgsym, \
+DEPENDS += libblkid1-dbgsym, \
 	   libmount1-dbgsym, \
 	   libuuid1-dbgsym, \
 	   dbus-dbgsym, \
