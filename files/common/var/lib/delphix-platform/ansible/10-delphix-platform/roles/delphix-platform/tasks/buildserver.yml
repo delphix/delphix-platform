@@ -1,0 +1,54 @@
+#
+# Copyright 2022 Delphix
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+---
+#
+# To improve build latency, we set the following properties:
+#
+# - recordsize: We've seen better IO utilization when using a larger
+#    than the default 128K recordsize; the "delphix-rpool-upgrade"
+#    service will enable the "large_blocks" pool feature.
+#
+# - sync: We don't support resuming builds after a reboot, so there's no
+#   need to preserve normal sync semantics.
+#
+- zfs:
+    name: "{{ root_container }}"
+    state: present
+    extra_zfs_properties:
+      recordsize: 1M
+      sync: disabled
+
+- command: swapon --show --noheadings
+  register: show
+
+#
+# We've hit build failures when swap space is not available, so we've
+# opted to automatically configure swap space here.
+#
+# This is a bit awkward, but we've hardcoded the device we're using for
+# swap here, based on the assumption that the Delphix buildserver will
+# only be used on AWS, and will have 3 "data" disks available like
+# normal internal Delphix DCenter systems.
+#
+# Additionally, we're not using a file on the root filesystem, as we
+# assume the root filesystem is on ZFS, and swap on ZFS can lead to
+# deadlocks; see: https://github.com/openzfs/zfs/issues/7734.
+#
+- shell: |
+    mkswap /dev/nvme1n1
+    swapon /dev/nvme1n1
+  when: show.stdout == ""

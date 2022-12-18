@@ -31,6 +31,7 @@
     uid: 65433
     group: staff
     groups: root
+    append: true
     shell: /bin/bash
     create_home: yes
     comment: Delphix User
@@ -562,3 +563,8 @@
     path: "{{ item.path }}"
     mode: 0644
   with_items: '{{ motd_files.files }}'
+
+- include_tasks: buildserver.yml
+  when:
+    - variant == "internal-buildserver"
+    - not ansible_is_chroot
