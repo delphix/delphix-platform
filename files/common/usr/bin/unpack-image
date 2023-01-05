@@ -127,6 +127,8 @@ sha256sum -c SHA256SUMS >/dev/null ||
 
 popd &>/dev/null || die "'popd' failed"
 
+rm "$UPGRADE_IMAGE_PATH" || die "failed to remove $UPGRADE_IMAGE_PATH"
+
 report_progress_inc 50 "Handoff unpack to prepare script."
 
 "$UNPACK_DIR"/prepare ${opt_f:+"-f"} ${opt_s:+"-s"} ${opt_x:+"-x"} "$UNPACK_DIR"
