@@ -1,5 +1,5 @@
 #
-# Copyright 2018, 2021 Delphix
+# Copyright 2018, 2023 Delphix
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -504,7 +504,8 @@
 #       [1] Compress the dump (-c)
 #       [2] Filter out pages that are zero, in the page or private cache,
 #           part of user data, or marked as freed (-d 31)
-#       [3] Print common, error, and report messages (--message-level 22)
+#       [3] Output a progress indicator, common and error messages, and
+#           a report summary message (--message-level 23)
 #       [4] Exclude ZFS ARC file data pages
 #           (--private-page-filter 0x2F5ABDF11ECAC4E)
 #       * see man page makedumpfile(8) for more info
@@ -545,7 +546,7 @@
     line: "{{ item.line }}"
   with_items:
     - regex: '^#?MAKEDUMP_ARGS='
-      line: 'MAKEDUMP_ARGS="-c -d 31 --message-level 22 --private-page-filter 0x2F5ABDF11ECAC4E"'
+      line: 'MAKEDUMP_ARGS="-c -d 31 --message-level 23 --private-page-filter 0x2F5ABDF11ECAC4E"'
     - regex: '^#?KDUMP_CMDLINE_APPEND='
       line: 'KDUMP_CMDLINE_APPEND="reset_devices systemd.unit=kdump-tools-dump.service nr_cpus=1 irqpoll nousb ata_piix.prefer_ms_hyperv=0 panic=10"'
 
