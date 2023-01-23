@@ -346,6 +346,12 @@
     # especially since we aren't using any extensions.
     #
     - { key: 'AutoUpdate.Enabled', value: 'n' }
+    #
+    # This controls how the resource disk is provisioned. We don't
+    # currently use this disk so don't enable swap or format it.
+    #
+    - { key: 'ResourceDisk.Format', value: 'n' }
+    - { key: 'ResourceDisk.EnableSwap', value: 'n' }
   when: platform == "azure"
 
 #
