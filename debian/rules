@@ -112,16 +112,13 @@ DEPENDS += usrmerge,
 DEPENDS += aptitude, \
 	   awscli, \
 	   bcc-tools, \
-	   bpftrace, \
 	   crash-python, \
 	   delphix-rust, \
 	   dnsutils, \
-	   drgn, \
 	   dstat, \
 	   emacs-nox, \
 	   ethtool, \
 	   gdb, \
-	   gdb-python, \
 	   htop, \
 	   iftop, \
 	   inotify-tools, \
