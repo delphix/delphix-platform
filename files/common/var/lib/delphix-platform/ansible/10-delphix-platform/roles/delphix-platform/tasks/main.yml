@@ -161,7 +161,7 @@
 - file:
     path: /var/delphix/log/session-logs
     state: directory
-    owner: delphix
+    group: staff
     mode: 0775
     recurse: yes
 
