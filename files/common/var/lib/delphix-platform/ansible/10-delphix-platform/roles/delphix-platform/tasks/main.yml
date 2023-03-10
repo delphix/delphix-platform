@@ -154,6 +154,19 @@
 - command: systemctl mask systemd-journald-audit.socket
 
 #
+# Create directory to store logs of all terminal activity by delphix
+# super users. These logs can be retrieved via a customer-facing API
+# for auditing purposes.
+#
+- file:
+    path: /var/delphix/log/session-logs
+    state: directory
+    owner: delphix
+    group: staff
+    mode: 0700
+    recurse: yes
+
+#
 # The nfs-blkmap.service is disabled by default but since it is wanted
 # by nfs-client.target it will always get started.  We don't use pNFS
 # so mask the nfs-blkmap.service to keep it from running.
