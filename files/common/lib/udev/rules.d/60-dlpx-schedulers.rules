@@ -3,4 +3,4 @@
 # the Linux IO scheduler for all block devices as we've seen problems with it.
 # We explicitly disable it for zvols as it doesn't seem to apply to them anyway.
 #
-ACTION=="add|change", SUBSYSTEM=="block", KERNEL!="zd*", ATTR{queue/wbt_lat_usec}="0"
+ACTION=="add|change", SUBSYSTEM=="block", ENV{DEVTYPE}=="disk", KERNEL!="zd*", ATTR{queue/wbt_lat_usec}="0"
