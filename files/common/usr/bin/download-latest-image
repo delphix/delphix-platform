@@ -31,7 +31,7 @@ function cleanup() {
 }
 
 opt_f=false
-opt_b=master
+opt_b="6.0/stage"
 opt_N=false
 while getopts ':fb:N' c; do
 	case "$c" in
