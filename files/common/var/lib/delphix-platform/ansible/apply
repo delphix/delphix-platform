@@ -26,7 +26,10 @@ ROOT_CONTAINER=$(dirname "$ROOT_FILESYSTEM")
 # If we are running as part of live-build, the root of the appliance's
 # filesystem won't be /
 #
-APPLIANCE_ROOT_DIR="$SOURCE_DIRECTORY/../../../.."
+if [[ "$DLPX_ANSIBLE_CONNECTION" == "chroot" ]]; then
+	APPLIANCE_ROOT_DIR="$SOURCE_DIRECTORY/../../../.."
+fi
+
 PLATFORM=$(cat "$APPLIANCE_ROOT_DIR/var/lib/delphix-appliance/platform")
 VARIANT=$(cat "$APPLIANCE_ROOT_DIR/usr/share/doc/delphix-entire-$PLATFORM/variant")
 
@@ -80,7 +83,7 @@ function apply_playbook() {
 #    continues to work, even if the ansible configuration doesn't have
 #    to be re-applied.
 #
-if [[ -f /var/lib/delphix-platform/ansible-done ]]; then
+if [[ -f "$APPLIANCE_ROOT_DIR/var/lib/delphix-platform/ansible-done" ]]; then
 	exit 0
 fi
 
