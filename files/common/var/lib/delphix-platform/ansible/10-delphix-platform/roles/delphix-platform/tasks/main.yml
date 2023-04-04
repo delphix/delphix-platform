@@ -167,6 +167,17 @@
     recurse: yes
 
 #
+# If the task above had to create the "/var/delphix" directory, the
+# permissions will not be correct, so we fix the permissions here.
+#
+- file:
+    path: /var/delphix
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
+
+#
 # The nfs-blkmap.service is disabled by default but since it is wanted
 # by nfs-client.target it will always get started.  We don't use pNFS
 # so mask the nfs-blkmap.service to keep it from running.
