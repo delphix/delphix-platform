@@ -595,6 +595,37 @@
     mode: 0644
   with_items: '{{ motd_files.files }}'
 
+#
+# The vmtoolsd daemon provides a wealth of information about the guest VM to
+# the host, and a lot of that information is superfluous. For example, the list
+# of filesystems mounted in the guest, or the list of processes running inside
+# the guest. Not only is this information superfluous to the VMware admin,
+# obtaining that information on a very large VM takes up precious CPU time. For
+# example, the list of disks and filesystems is by default obtained every 30
+# seconds, and when doing that, vmtoolsd does a statfs and lstat of every
+# single filesystem and mountpoint. On a Delphix Engine with tens-of-thousands
+# of timeflows, this is a large amount of churn.
+#
+# We disable the plugins responsible for this superfluous churn here.
+#
+- blockinfile:
+    path: /etc/vmware-tools/tools.conf
+    block: |
+      [guestinfo]
+      # Set to true to disable DiskInfo.
+      disable-query-diskinfo=true
+
+      [appinfo]
+      # Set to true to disable the appinfo plugin.
+      disabled=true
+
+      [servicediscovery]
+      # Set to true to disable the servicediscovery plugin.
+      disabled=true
+  when:
+    - platform == "vmware"
+  notify: "vmware-tools config changed"
+
 - include_tasks: buildserver.yml
   when:
     - variant == "internal-buildserver"
