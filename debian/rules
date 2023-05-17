@@ -65,7 +65,6 @@ DEPENDS += ansible, \
 	   rng-tools, \
 	   rsyslog, \
 	   systemd-container, \
-	   ubuntu-minimal, \
 	   update-notifier-common,
 
 # Debugging symbols for packages pulled in by the the above dependencies
