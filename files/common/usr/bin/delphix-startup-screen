@@ -186,31 +186,29 @@ def set_common_variables(stdscr) -> Tuple[int, int]:
     return X, Y
 
 
-def getstatus_pair(lst) -> Generator:
-    """
-    Process the status and return a list which is comprised of
-    ['service description', 'service status'].
-    """
-    for i in range(0, len(lst), 2):
-        yield lst[i:i + 2]
-
-
 def getstatus() -> str:
     """
-    Each service returns 2 lines -- one with the description and the
-    next line with the state.
+    Gets the status of each service, with each line containing service
+    state and description.
     """
     status = ""
-    for i in getstatus_pair(list(run_svcs("Description"))):
+
+    # `svcs_status` contains 3 elements for each service:
+    # Description, ActiveState and UnitFileState.
+    svcs_status = list(run_svcs("Description,UnitFileState"))
+
+    for i in range(0, len(svcs_status), 3):
+        desc, active_state, enabled_state = svcs_status[i:i + 3]
         #
-        # Don't print any inactive services
+        # Don't print any inactive services which are not enabled
         #
-        if i[-1].strip() == "inactive":
+        if (active_state.strip() == "inactive" and
+                enabled_state.strip() != "enabled"):
             continue
         #
-        # Switch the state and description
+        # Append the state and description of each service
         #
-        status += f"{i[-1]}\t{i[0]}\n"
+        status += f"{active_state}\t{desc}\n"
     return status
 
 
