@@ -55,7 +55,7 @@ def get_svcs() -> List[str]:
     return cp.stdout.split("=", 1)[1].split()
 
 
-def run_svcs(options: str = None) -> Generator:
+def run_svcs(options: str = "") -> Generator:
     """
     Run the command to retrieve the status of all the services. The options
     argument can be used to obtain additional output from the 'systemctl'
@@ -245,7 +245,7 @@ def display_status(stdscr, win):
     status = 0
 
     x = int((X - width) / 2) + 2
-    y = (Y - height)
+    y = Y - height
 
     win.clear()
     win.box()
