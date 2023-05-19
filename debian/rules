@@ -71,7 +71,7 @@ DEPENDS += ansible, \
 #
 # The CRA PAM module provides an authentication method for the delphix user.
 #
-DEPENDS += pam-challenge-response
+DEPENDS += pam-challenge-response,
 
 # Platform-specific dependencies
 DEPENDS.aws = nvme-cli,
