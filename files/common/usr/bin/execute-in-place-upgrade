@@ -1,0 +1,222 @@
+#!/bin/bash
+#
+# Copyright 2023 Delphix
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+UPDATE_DIR=${UPDATE_DIR:-/var/dlpx-update}
+
+function die() {
+	echo "$(basename "$0"): $*" >&2
+	exit 1
+}
+
+function usage() {
+	echo "$(basename "$0"): $*" >&2
+	echo "Usage: $(basename "$0") [-f] [-p] [-l | -v version]"
+	exit 2
+}
+
+function get_mounted_rootfs_container_dataset() {
+	dirname "$(zfs list -Hpo name /)"
+}
+
+function get_mounted_rootfs_container_name() {
+	basename "$(get_mounted_rootfs_container_dataset)"
+}
+
+function reboot_or_restart() {
+	if [[ "$1" == "reboot" ]]; then
+		exec systemctl reboot || die "failed to reboot"
+	elif [[ "$1" == "restart" ]]; then
+		exec systemctl restart delphix.target ||
+			die "failed to restart delphix.target"
+	else
+		die "must specify 'reboot' or 'restart'; not '$1'"
+	fi
+}
+
+function upgrade_via_image() {
+	local image="$1"
+
+	[[ -f "$image/execute" ]] || die "file not found: '$image/execute'"
+
+	"$image/execute" -p "$(get-appliance-platform)" ||
+		die "failed to run 'execute' script"
+
+	local container
+	container="$(get_mounted_rootfs_container_name)"
+	[[ -n "$container" ]] ||
+		die "unable to determine currently mounted rootfs container"
+
+	#
+	# We use a seperate ZFS dataset for GRUB, and this dataset is
+	# generally not mounted when we update packages on the system.
+	# Thus, when a new kernel package is installed, via the call to
+	# "execute" above, the GRUB configuration will not be modified
+	# to use that new kernel.
+	#
+	# In order for the system to use the new kernel after a reboot,
+	# we must regenerate the GRUB configuration after the new kernel
+	# has been installed. The "rootfs-container set-bootfs" command
+	# will do just that; it knows how to mount our GRUB specific
+	# dataset, and how to properly update the GRUB configuration.
+	#
+	# Note, we only want to update GRUB, when running outside of an
+	# upgrade container; since upgrading an upgrade container should
+	# not affect the host system.
+	#
+	if ! systemd-detect-virt -qc; then
+		"$image/rootfs-container" set-bootfs "$container" ||
+			die "failed to set-bootfs '$container'"
+	fi
+
+	systemctl reload delphix-platform.service ||
+		die "failed to reload delphix-platform.service"
+}
+
+function upgrade_via_version() {
+	local version="$1"
+	[[ -n "$version" ]] || die "version not specified"
+
+	upgrade_via_image "$UPDATE_DIR/$version"
+}
+
+function upgrade_via_properties() {
+	[[ -f "$UPDATE_DIR/upgrade.properties" ]] ||
+		die "file not found: '$UPDATE_DIR/upgrade.properties'"
+
+	# shellcheck disable=SC1090
+	. "$UPDATE_DIR/upgrade.properties" ||
+		die "failed to source: '$UPDATE_DIR/upgrade.properties'"
+
+	[[ -n "$UPGRADE_VERSION" ]] ||
+		die "variable not found: UPGRADE_VERSION"
+
+	[[ -n "$UPGRADE_TYPE" ]] ||
+		die "variable not found: UPGRADE_TYPE"
+
+	if [[ -z "$UPGRADE_HOTFIX" ]]; then
+		upgrade_via_version "${UPGRADE_VERSION}"
+	else
+		upgrade_via_version "${UPGRADE_VERSION}-${UPGRADE_HOTFIX}"
+	fi
+
+	if [[ "$UPGRADE_TYPE" == "FULL" ]]; then
+		reboot_or_restart "reboot"
+	else
+		reboot_or_restart "restart"
+	fi
+}
+
+#
+# Perform a "full" upgrade, which does a system reboot. By default, we
+# perform a "deferred" upgrade, which restarts services, but does not
+# reboot the system.
+#
+opt_f=""
+
+#
+# Use the specified image path when executing the upgrade.
+#
+opt_i=""
+
+#
+# Use the "latest" symlinked version when executing the upgrade.
+#
+opt_l=""
+
+#
+# Use the version found in the "upgrade.properties" file when executing
+# the upgrade.
+#
+opt_p=""
+
+#
+# Use the specified version when executing the upgrade.
+#
+opt_v=""
+
+while getopts ':fi:lpv:' c; do
+	case "$c" in
+	f | l | p) eval "opt_$c=true" ;;
+	i | v) eval "opt_$c='$OPTARG'" ;;
+	*) usage "illegal option -- $OPTARG" ;;
+	esac
+done
+shift $((OPTIND - 1))
+
+[[ $# -ne 0 ]] && usage "too many arguments specified"
+
+[[ "$EUID" -ne 0 ]] && die "must be run as root"
+[[ -d "$UPDATE_DIR" ]] || die "$UPDATE_DIR does not exist"
+
+if [[ -n "$opt_i" ]]; then
+	([[ -z "$opt_l" ]] && [[ -z "$opt_p" ]] && [[ -z "$opt_v" ]]) ||
+		usage "cannot specify '-l', '-p' or '-v' with '-i'"
+
+	upgrade_via_image "$opt_i"
+
+	if [[ -n "$opt_f" ]]; then
+		reboot_or_restart "reboot"
+	else
+		reboot_or_restart "restart"
+	fi
+elif [[ -n "$opt_l" ]]; then
+	([[ -z "$opt_i" ]] && [[ -z "$opt_p" ]] && [[ -z "$opt_v" ]]) ||
+		usage "cannot specify '-i', '-p' or '-v' with '-l'"
+
+	upgrade_via_version "latest"
+
+	if [[ -n "$opt_f" ]]; then
+		reboot_or_restart "reboot"
+	else
+		reboot_or_restart "restart"
+	fi
+elif [[ -n "$opt_p" ]]; then
+	([[ -z "$opt_i" ]] && [[ -z "$opt_l" ]] && [[ -z "$opt_v" ]]) ||
+		usage "cannot specify '-i', '-l' or '-v' with '-p'"
+
+	#
+	# We do not allow '-f' when using '-p', since the type of the
+	# upgrade (i.e. "full" or "deferred") should be specified in the
+	# "upgrade.properties" file, via the "UPGRADE_TYPE" field.
+	#
+	[[ -z "$opt_f" ]] || usage "cannot specify '-f' with '-p'"
+
+	upgrade_via_properties
+
+	#
+	# reboot_or_restart already called by upgrade_via_properties
+	#
+elif [[ -n "$opt_v" ]]; then
+	([[ -z "$opt_i" ]] && [[ -z "$opt_l" ]] && [[ -z "$opt_p" ]]) ||
+		usage "cannot specify '-i', '-l' or '-p' with '-v'"
+
+	upgrade_via_version "$opt_v"
+
+	if [[ -n "$opt_f" ]]; then
+		reboot_or_restart "reboot"
+	else
+		reboot_or_restart "restart"
+	fi
+else
+	usage "no image/version option specified"
+fi
+
+#
+# We should never reach this statement, so error if we do, as it likely
+# means we didn't call the "reboot_or_restart" function.
+#
+exit 1
