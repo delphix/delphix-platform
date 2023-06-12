@@ -54,6 +54,7 @@ DEPENDS += ansible, \
 	   debootstrap, \
 	   debsums, \
 	   dmidecode, \
+	   iputils-ping, \
 	   logrotate, \
 	   net-tools, \
 	   ntp, \
@@ -65,7 +66,6 @@ DEPENDS += ansible, \
 	   rng-tools, \
 	   rsyslog, \
 	   systemd-container, \
-	   ubuntu-minimal, \
 	   update-notifier-common,
 
 #
