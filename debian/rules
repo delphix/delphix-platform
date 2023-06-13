@@ -50,10 +50,13 @@ DEPENDS += grub-pc, \
 DEPENDS += ansible, \
 	   auditd, \
 	   cloud-init, \
+	   console-setup, \
 	   cron, \
 	   debootstrap, \
 	   debsums, \
 	   dmidecode, \
+	   init, \
+	   iputils-ping, \
 	   logrotate, \
 	   net-tools, \
 	   ntp, \
@@ -65,7 +68,6 @@ DEPENDS += ansible, \
 	   rng-tools, \
 	   rsyslog, \
 	   systemd-container, \
-	   ubuntu-minimal, \
 	   update-notifier-common,
 
 #
