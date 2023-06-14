@@ -260,6 +260,22 @@
     #
     - variant is regex("external-.*")
 
+- blockinfile:
+    path: /etc/profile
+    insertAfter: BOF
+    block: |
+      # Set a 5 minute timeout for all shells
+      TMOUT=300
+      readonly TMOUT
+      export TMOUT
+    when:
+      #
+      # For developer convenience, we only enable the shell timeout
+      # for external variants. The idle timeout can be a burden when we
+      # need to run long running processes over SSH on our internal
+      # systems (e.g. for development, testing, etc).
+      #
+      - variant is regex("external-.*")
 #
 # Harden the appliance by disabling SFTP.
 #
