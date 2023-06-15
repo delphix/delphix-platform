@@ -44,29 +44,64 @@ DEPENDS += grub-pc, \
 	   delphix-zfs,
 
 #
-# The following packages provide the minimal set of packages that are
-# necessary to create a working system (e.g. networking, users, etc).
+# The following packages provide a "minimal" Ubuntu installation. This mimics
+# the "ubuntu-minimal" meta-package, but since that package includes more than
+# we want installed on the appliance, we can't use it directly. Additionally,
+# our appliance requires a few more packages than would be pulled in by
+# "ubuntu-minimal", and these additional packages are listed here.
 #
-DEPENDS += ansible, \
+DEPENDS += adduser, \
+	   ansible, \
+	   apt, \
+	   apt-utils, \
 	   auditd, \
+	   bzip2, \
 	   cloud-init, \
+	   console-setup, \
 	   cron, \
+	   debconf, \
+	   debconf-i18n, \
 	   debootstrap, \
 	   debsums, \
 	   dmidecode, \
+	   eject, \
+	   init, \
+	   initramfs-tools, \
+	   iproute2, \
+	   iputils-ping, \
+	   isc-dhcp-client, \
+	   kbd, \
+	   kmod, \
+	   less, \
+	   locales, \
 	   logrotate, \
+	   lsb-release, \
+	   mawk, \
+	   mount, \
 	   net-tools, \
+	   netbase, \
+	   netcat-openbsd, \
+	   netplan.io, \
 	   ntp, \
 	   open-iscsi, \
 	   openssh-server, \
 	   openssl, \
+	   passwd, \
 	   policykit-1, \
+	   procps, \
 	   python3, \
 	   rng-tools, \
 	   rsyslog, \
+	   sensible-utils, \
+	   sudo, \
 	   systemd-container, \
-	   ubuntu-minimal, \
-	   update-notifier-common,
+	   tzdata, \
+	   ubuntu-advantage-tools, \
+	   ubuntu-keyring, \
+	   udev, \
+	   update-notifier-common, \
+	   vim-tiny, \
+	   whiptail,
 
 #
 # The CRA PAM module provides an authentication method for the delphix user.
