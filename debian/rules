@@ -96,7 +96,6 @@ DEPENDS += adduser, \
 	   sudo, \
 	   systemd-container, \
 	   tzdata, \
-	   ubuntu-advantage-tools, \
 	   ubuntu-keyring, \
 	   udev, \
 	   update-notifier-common, \

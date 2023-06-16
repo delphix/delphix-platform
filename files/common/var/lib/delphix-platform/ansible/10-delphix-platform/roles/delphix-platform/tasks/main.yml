@@ -626,6 +626,18 @@
     - platform == "vmware"
   notify: "vmware-tools config changed"
 
+#
+# In a prior release, the "ubuntu-advantage-tools" package may have
+# dynamically generated this file as part of its "postinst" package
+# hook. This file can result in upgrade problems, so we ensure it's
+# absent. We can't rely on the file being automatically removed, because
+# it was dynamically generated, and thus not removed by the package
+# manager when the package is removed.
+#
+- file:
+    path: "/etc/apt/sources.list.d/ubuntu-esm-infra.list"
+    state: absent
+
 - include_tasks: buildserver.yml
   when:
     - variant == "internal-buildserver"
