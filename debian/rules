@@ -50,37 +50,26 @@ DEPENDS += grub-pc, \
 # our appliance requires a few more packages than would be pulled in by
 # "ubuntu-minimal", and these additional packages are listed here.
 #
-DEPENDS += adduser, \
-	   ansible, \
+DEPENDS += ansible, \
 	   apt, \
-	   apt-utils, \
 	   auditd, \
-	   bzip2, \
 	   cloud-init, \
 	   console-setup, \
 	   cron, \
-	   debconf, \
-	   debconf-i18n, \
 	   debootstrap, \
 	   debsums, \
 	   dmidecode, \
-	   eject, \
 	   init, \
-	   initramfs-tools, \
 	   iproute2, \
 	   iputils-ping, \
-	   isc-dhcp-client, \
 	   kbd, \
 	   kmod, \
 	   less, \
-	   locales, \
 	   logrotate, \
 	   lsb-release, \
-	   mawk, \
 	   mount, \
 	   net-tools, \
 	   netbase, \
-	   netcat-openbsd, \
 	   netplan.io, \
 	   ntp, \
 	   open-iscsi, \
@@ -92,15 +81,10 @@ DEPENDS += adduser, \
 	   python3, \
 	   rng-tools, \
 	   rsyslog, \
-	   sensible-utils, \
 	   sudo, \
 	   systemd-container, \
 	   tzdata, \
-	   ubuntu-keyring, \
-	   udev, \
-	   update-notifier-common, \
-	   vim-tiny, \
-	   whiptail,
+	   udev,
 
 #
 # The CRA PAM module provides an authentication method for the delphix user.
