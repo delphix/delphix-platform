@@ -65,6 +65,7 @@ DEPENDS += ansible, \
 	   kbd, \
 	   kmod, \
 	   less, \
+	   locales, \
 	   logrotate, \
 	   lsb-release, \
 	   mount, \
