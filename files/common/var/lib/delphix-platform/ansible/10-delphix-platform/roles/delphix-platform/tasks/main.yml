@@ -262,7 +262,7 @@
 
 - blockinfile:
     path: /etc/profile
-    insertafter: BOF
+    insertafter: EOF
     block: |
       # Set a 5 minute idle timeout for all shells. After prompting for input
       # this timeout timer begins.
