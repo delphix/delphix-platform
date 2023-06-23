@@ -661,12 +661,13 @@
     - variant == "internal-buildserver"
     - not ansible_is_chroot
 
-
 # Delete backup files that serve no purpose in production instances.
 
 - file:
-    path: "{{ item }}"
+    path: "/etc/passwd-"
     state: absent
-  with_items:
-    - /etc/passwd-
-    - /etc/shadow-
+
+- file:
+    path: "/etc/shadow-"
+    state: absent
+  
