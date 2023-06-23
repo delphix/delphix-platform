@@ -661,12 +661,16 @@
     - variant == "internal-buildserver"
     - not ansible_is_chroot
 
-
 # Delete backup files that serve no purpose in production instances.
+# Various OS utilities change the backup file permissions to the
+# permission of their "real" files so we have to change them too.
 
 - file:
     path: "{{ item }}"
-    state: absent
+    mode: '600'
   with_items:
+    - /etc/passwd
     - /etc/passwd-
     - /etc/shadow-
+    - /etc/shadow
+
