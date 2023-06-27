@@ -51,6 +51,7 @@ DEPENDS += grub-pc, \
 # "ubuntu-minimal", and these additional packages are listed here.
 #
 DEPENDS += ansible, \
+	   apparmor, \
 	   apt, \
 	   auditd, \
 	   cloud-init, \
