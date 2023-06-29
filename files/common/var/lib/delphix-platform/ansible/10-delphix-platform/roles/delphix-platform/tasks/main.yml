@@ -74,8 +74,8 @@
     mode: 01777
 
 #
-# Restrict cronjob permissions. All jobs are owned by root so no need to
-# allow others to take a peek.
+# Restrict cron permissions. All jobs are owned by root so there's no
+# reason to allow others any level of access.
 #
 - file:
     path: /etc/crontab
