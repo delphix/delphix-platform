@@ -63,7 +63,7 @@
 #
 # Create a world writeable directory for application and kernel core
 # dumps. We want it world writeable because we're sharing one directory
-# for corefiles from any user. Unlike illumos where all appliacation
+# for corefiles from any user. Unlike illumos where all application
 # cores are written out as the root user, linux cores are written with
 # the UID of the running process.
 #
@@ -71,6 +71,40 @@
     path: /var/crash
     state: directory
     mode: 0777
+
+#
+# Restrict cronjob permissions. All jobs are owned by root so no need to
+# allow others to take a peek.
+#
+- file:
+    path: /etc/crontab
+    state: present
+    mode: 0600
+
+- file:
+    path: /etc/cron.d
+    state: directory
+    mode: 0700
+
+- file:
+    path: /etc/cron.hourly
+    state: directory
+    mode: 0700
+
+- file:
+    path: /etc/cron.daily
+    state: directory
+    mode: 0700
+
+- file:
+    path: /etc/cron.weekly
+    state: directory
+    mode: 0700
+
+- file:
+    path: /etc/cron.monthly
+    state: directory
+    mode: 0700
 
 #
 # Create the directory and ZFS dataset that we'll use to store unpacked
