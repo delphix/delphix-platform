@@ -63,14 +63,15 @@
 #
 # Create a world writeable directory for application and kernel core
 # dumps. We want it world writeable because we're sharing one directory
-# for corefiles from any user. Unlike illumos where all application
+# for core files from any user. Unlike illumos where all application
 # cores are written out as the root user, linux cores are written with
-# the UID of the running process.
+# the UID of the running process. Also, we are setting the sticky bit on
+# this directory to prevent users from removing each other's files.
 #
 - file:
     path: /var/crash
     state: directory
-    mode: 0777
+    mode: 01777
 
 #
 # Restrict cronjob permissions. All jobs are owned by root so no need to
@@ -201,6 +202,17 @@
     recurse: yes
 
 #
+# If the task above had to create the "/var/delphix" directory, the
+# permissions will not be correct, so we fix the permissions here.
+#
+- file:
+    path: /var/delphix
+    state: directory
+    owner: root
+    group: root
+    mode: 0775
+
+#
 # The nfs-blkmap.service is disabled by default but since it is wanted
 # by nfs-client.target it will always get started.  We don't use pNFS
 # so mask the nfs-blkmap.service to keep it from running.
@@ -283,6 +295,23 @@
     #
     - variant is regex("external-.*")
 
+- blockinfile:
+    path: /etc/profile
+    insertafter: EOF
+    block: |
+      # Set a 5 minute idle timeout for all shells. After prompting for input
+      # this timeout timer begins.
+      TMOUT=300
+      readonly TMOUT
+      export TMOUT
+  when:
+    #
+    # For developer convenience, we only enable the shell timeout
+    # for external variants. The idle timeout can be a burden when we
+    # need to run long running processes over SSH on our internal
+    # systems (e.g. for development, testing, etc).
+    #
+    - variant is regex("external-.*")
 #
 # Harden the appliance by disabling SFTP.
 #
@@ -617,6 +646,49 @@
     path: "{{ item.path }}"
     mode: 0644
   with_items: '{{ motd_files.files }}'
+
+#
+# The vmtoolsd daemon provides a wealth of information about the guest VM to
+# the host, and a lot of that information is superfluous. For example, the list
+# of filesystems mounted in the guest, or the list of processes running inside
+# the guest. Not only is this information superfluous to the VMware admin,
+# obtaining that information on a very large VM takes up precious CPU time. For
+# example, the list of disks and filesystems is by default obtained every 30
+# seconds, and when doing that, vmtoolsd does a statfs and lstat of every
+# single filesystem and mountpoint. On a Delphix Engine with tens-of-thousands
+# of timeflows, this is a large amount of churn.
+#
+# We disable the plugins responsible for this superfluous churn here.
+#
+- blockinfile:
+    path: /etc/vmware-tools/tools.conf
+    block: |
+      [guestinfo]
+      # Set to true to disable DiskInfo.
+      disable-query-diskinfo=true
+
+      [appinfo]
+      # Set to true to disable the appinfo plugin.
+      disabled=true
+
+      [servicediscovery]
+      # Set to true to disable the servicediscovery plugin.
+      disabled=true
+  when:
+    - platform == "vmware"
+  notify: "vmware-tools config changed"
+
+#
+# In a prior release, the "ubuntu-advantage-tools" package may have
+# dynamically generated this file as part of its "postinst" package
+# hook. This file can result in upgrade problems, so we ensure it's
+# absent. We can't rely on the file being automatically removed, because
+# it was dynamically generated, and thus not removed by the package
+# manager when the package is removed.
+#
+- file:
+    path: "/etc/apt/sources.list.d/ubuntu-esm-infra.list"
+    state: absent
 
 - include_tasks: buildserver.yml
   when:

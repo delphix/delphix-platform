@@ -44,54 +44,53 @@ DEPENDS += grub-pc, \
 	   delphix-zfs,
 
 #
-# The following packages provide the minimal set of packages that are
-# necessary to create a working system (e.g. networking, users, etc).
+# The following packages provide a "minimal" Ubuntu installation. This mimics
+# the "ubuntu-minimal" meta-package, but since that package includes more than
+# we want installed on the appliance, we can't use it directly. Additionally,
+# our appliance requires a few more packages than would be pulled in by
+# "ubuntu-minimal", and these additional packages are listed here.
 #
 DEPENDS += ansible, \
+	   apt, \
 	   auditd, \
 	   cloud-init, \
+	   console-setup, \
 	   cron, \
 	   debootstrap, \
 	   debsums, \
 	   dmidecode, \
+	   init, \
+	   iproute2, \
+	   iputils-ping, \
+	   kbd, \
+	   kmod, \
+	   less, \
+	   locales, \
 	   logrotate, \
+	   lsb-release, \
+	   mount, \
 	   net-tools, \
+	   netbase, \
+	   netplan.io, \
 	   ntp, \
 	   open-iscsi, \
 	   openssh-server, \
 	   openssl, \
+	   passwd, \
 	   policykit-1, \
+	   procps, \
 	   python3, \
 	   rng-tools, \
 	   rsyslog, \
+	   sudo, \
 	   systemd-container, \
-	   ubuntu-minimal, \
-	   update-notifier-common,
-
-# Debugging symbols for packages pulled in by the the above dependencies
-DEPENDS += libblkid1-dbgsym, \
-	   libmount1-dbgsym, \
-	   libuuid1-dbgsym, \
-	   dbus-dbgsym, \
-	   libdbus-1-3-dbgsym, \
-	   openssh-server-dbgsym, \
-	   openssh-client-dbgsym, \
-	   coreutils-dbgsym, \
-	   bash-dbgsym, \
-	   iproute2-dbgsym, \
-	   net-tools-dbgsym,
-
-#
-# The following package contains the GPG keys which allow us to download
-# from the repositories which contain packages containing debug symbols.
-#
-DEPENDS += ubuntu-dbgsym-keyring,
+	   tzdata, \
+	   udev,
 
 #
 # The CRA PAM module provides an authentication method for the delphix user.
 #
-DEPENDS += pam-challenge-response, \
-	   pam-challenge-response-dbgsym,
+DEPENDS += pam-challenge-response,
 
 # Platform-specific dependencies
 DEPENDS.aws = nvme-cli,
@@ -127,12 +126,10 @@ DEPENDS += aptitude, \
 	   awscli, \
 	   bcc-tools, \
 	   bpftrace, \
-	   bpftrace-dbgsym, \
 	   crash-python, \
 	   delphix-rust, \
 	   dnsutils, \
 	   drgn, \
-	   drgn-dbgsym, \
 	   dstat, \
 	   emacs-nox, \
 	   ethtool, \
@@ -145,12 +142,9 @@ DEPENDS += aptitude, \
 	   jq, \
 	   kdump-tools, \
 	   ldap-utils, \
-	   libbcc-dbgsym, \
 	   libkdumpfile, \
-	   libkdumpfile-dbgsym, \
 	   linux-tools-common, \
 	   lsof, \
-	   makedumpfile-dbgsym, \
 	   man-db, \
 	   manpages, \
 	   manpages-dev, \
@@ -162,7 +156,6 @@ DEPENDS += aptitude, \
 	   procinfo, \
 	   psmisc, \
 	   ptools, \
-	   ptools-dbgsym, \
 	   pv, \
 	   savedump, \
 	   screen, \

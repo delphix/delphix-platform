@@ -31,3 +31,9 @@
     state: reloaded
   listen: "sshd config changed"
   when: ansible_virtualization_type != "systemd-nspawn" and not ansible_is_chroot
+
+- systemd:
+    name: open-vm-tools
+    state: restarted
+  listen: "vmware-tools config changed"
+  when: ansible_virtualization_type != "systemd-nspawn" and not ansible_is_chroot
