@@ -75,7 +75,8 @@
 
 #
 # Restrict cron permissions. All jobs are owned by root so there's no
-# reason to allow others any level of access.
+# reason to allow others any level of access. This is also necessary to
+# satisfy external auditing of CIS security benchmarks.
 #
 - file:
     path: /etc/crontab
@@ -83,29 +84,15 @@
     mode: 0600
 
 - file:
-    path: /etc/cron.d
+    path: "{{ item }}"
     state: directory
     mode: 0700
-
-- file:
-    path: /etc/cron.hourly
-    state: directory
-    mode: 0700
-
-- file:
-    path: /etc/cron.daily
-    state: directory
-    mode: 0700
-
-- file:
-    path: /etc/cron.weekly
-    state: directory
-    mode: 0700
-
-- file:
-    path: /etc/cron.monthly
-    state: directory
-    mode: 0700
+  with_items:
+    - /etc/cron.d
+    - /etc/cron.hourly
+    - /etc/cron.daily
+    - /etc/cron.weekly
+    - /etc/cron.monthly
 
 #
 # Create the directory and ZFS dataset that we'll use to store unpacked
