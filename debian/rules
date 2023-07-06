@@ -149,7 +149,7 @@ DEPENDS += aptitude, \
 	   manpages, \
 	   manpages-dev, \
 	   memstat, \
-	   mtr, \
+	   mtr-tiny, \
 	   ncdu, \
 	   pciutils, \
 	   performance-diagnostics, \
