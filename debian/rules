@@ -85,6 +85,7 @@ DEPENDS += ansible, \
 	   sudo, \
 	   systemd-container, \
 	   tzdata, \
+	   update-notifier-common, \
 	   udev,
 
 #
