@@ -31,7 +31,7 @@ Package: delphix-platform-@@TARGET_PLATFORM@@
 Provides: delphix-platform
 Conflicts: delphix-platform
 Architecture: any
-Replaces: base-files update-notifier-common
+Replaces: base-files, update-notifier-common
 Depends: ${misc:Depends}, ${delphix:Depends}
 Description: Delphix Appliance Platform
   This package provides the base platform of the Delphix Appliance. It contains
