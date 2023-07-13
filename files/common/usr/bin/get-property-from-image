@@ -28,7 +28,7 @@ function die() {
 		exit_code=1
 	fi
 	echo "$(basename "$0"): $*" >&2
-	exit ${exit_code}
+	exit "${exit_code}"
 }
 
 function usage() {
@@ -38,6 +38,7 @@ function usage() {
 }
 
 function cleanup() {
+	# shellcheck disable=SC2317
 	[[ -n "$UNPACK_DIR" ]] && [[ -d "$UNPACK_DIR" ]] && rm -rf "$UNPACK_DIR"
 }
 
