@@ -682,20 +682,11 @@
     - variant == "internal-buildserver"
     - not ansible_is_chroot
 
+#
 # CIS: Set default umask (DLPX-86533)
-# We need to set default umask as 022 in the /etc/profile and /etc/bash.bashrc files,
+# We need to set default umask as 022 in the /etc/bash.bashrc file,
 # so that the same can be applied for all the users on the engine.
-- blockinfile:
-    path: /etc/profile.d/set-umask-for-all-users.sh
-    create: yes
-    block: |
-      #!/bin/sh
-      umask 022
-
-- file:
-    path: /etc/profile.d/set-umask-for-all-users.sh
-    mode: '0755'
-
+#
 - blockinfile:
     path: /etc/bash.bashrc
     block: |
