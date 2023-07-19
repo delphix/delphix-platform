@@ -1,3 +1,3 @@
 #!/bin/sh
 
-umask 022
+umask 027
