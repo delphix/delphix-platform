@@ -681,3 +681,14 @@
   when:
     - variant == "internal-buildserver"
     - not ansible_is_chroot
+
+#
+# CIS: Set default umask (DLPX-86533)
+# We need to set default umask as 027 in the /etc/bash.bashrc file,
+# so that the same can be applied for all the users on the engine.
+#
+- blockinfile:
+    path: /etc/bash.bashrc
+    block: |
+      # Set default umask value.
+      umask 027
