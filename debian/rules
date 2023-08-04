@@ -118,6 +118,14 @@ DEPENDS += delphix-build-info,
 DEPENDS += usrmerge,
 
 #
+# These packages help strengthen the security of the appliance by identifying
+# and preventing undesired behaviors.
+#
+DEPENDS += aide, \
+	   aide-common, \
+	   apparmor,
+
+#
 # These packages are tools that are intended for human convenience. The
 # product should not rely on them programmatically. They may be updated
 # or replaced without regard for backward compatibility.
