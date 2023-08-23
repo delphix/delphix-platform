@@ -551,16 +551,6 @@
     replace: 'disk/by-id/wwn/'
 
 #
-# Enable CRA for external variants
-#
-- command: pam-auth-update {{ item }}
-  with_items:
-  - --enable challenge-response
-  - --remove unix
-  when:
-    - variant is regex("external-.*")
-
-#
 # Increase login timeout to give support more time to interact with CRA via the console.
 #
 - lineinfile:
