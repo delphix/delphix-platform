@@ -306,6 +306,11 @@
     path: /etc/ssh/sshd_config
     regexp: '^(Subsystem.*sftp.*)'
     replace: '#\1'
+  when:
+    #
+    # For developer convenience, we only enable the sftp
+    # for internal variants (e.g. for development, testing, etc).
+    - variant is regex("external-.*")
 
 #
 # Ssh leads to the CLI, not bash, so let's remove all the linuxy shell goodies,
