@@ -300,12 +300,18 @@
     #
     - variant is regex("external-.*")
 #
-# Harden the appliance by disabling SFTP.
+# Harden the appliance by disabling SFTP on external variants.
 #
 - replace:
     path: /etc/ssh/sshd_config
     regexp: '^(Subsystem.*sftp.*)'
     replace: '#\1'
+  when:
+    #
+    # Disable sftp on external variants and leave it enabled on internal
+    # variants for developer convenience and to facilitate test automation.
+    #
+    - variant is regex("external-.*")
 
 #
 # Ssh leads to the CLI, not bash, so let's remove all the linuxy shell goodies,
