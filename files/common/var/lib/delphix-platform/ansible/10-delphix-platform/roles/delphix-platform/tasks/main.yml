@@ -247,8 +247,7 @@
     - { key: "AllowTcpForwarding", value: "no" }
     - { key: "X11Forwarding", value: "no" }
     #
-    # Qualys scan QID: 38909 SHA1 deprecated setting for SSH
-    # Configure SSH to skip ssh-rsa in HostKeyAlgorithms
+    # Configure SSH to exclude the 'ssh-rsa' algorithm from HostKeyAlgorithms
     #
     - { key: "HostKeyAlgorithms", value: "-ssh-rsa*" }
 
