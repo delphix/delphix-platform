@@ -232,7 +232,6 @@
     path: /etc/ssh/sshd_config
     regexp: "^#?{{ item.key }} "
     line: "{{ item.key }} {{ item.value }}"
-  notify: "sshd config changed"
   with_items:
     #
     # Configure SSH to allow PAM "conversations" (interactions with the user).
@@ -251,6 +250,7 @@
     # Configure SSH to exclude the 'ssh-rsa' algorithm from HostKeyAlgorithms
     #
     - { key: "HostKeyAlgorithms", value: "-ssh-rsa*" }
+  notify: "sshd config changed"
 
 #
 # The CRA project mandated a 30 minute timeout for any idle connections.
