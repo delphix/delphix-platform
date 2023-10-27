@@ -246,9 +246,6 @@
     - { key: "AllowStreamLocalForwarding", value: "no" }
     - { key: "AllowTcpForwarding", value: "no" }
     - { key: "X11Forwarding", value: "no" }
-    #
-    # Configure SSH to exclude the 'ssh-rsa' algorithm from HostKeyAlgorithms
-    #
     - { key: "HostKeyAlgorithms", value: "-ssh-rsa*" }
   notify: "sshd config changed"
 
