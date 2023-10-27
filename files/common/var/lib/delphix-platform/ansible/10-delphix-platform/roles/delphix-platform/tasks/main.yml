@@ -232,6 +232,7 @@
     path: /etc/ssh/sshd_config
     regexp: "^#?{{ item.key }} "
     line: "{{ item.key }} {{ item.value }}"
+  notify: "sshd config changed"
   with_items:
     #
     # Configure SSH to allow PAM "conversations" (interactions with the user).
