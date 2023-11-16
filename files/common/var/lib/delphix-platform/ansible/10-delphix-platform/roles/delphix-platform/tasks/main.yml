@@ -79,9 +79,12 @@
 # satisfy external auditing of CIS security benchmarks.
 #
 - file:
-    path: /etc/crontab
+    path: "{{ item }}"
     state: file
     mode: 0600
+  with_items:
+    - /etc/crontab
+    - /etc/ssh/sshd_config
 
 - file:
     path: "{{ item }}"
@@ -247,6 +250,14 @@
     - { key: "AllowTcpForwarding", value: "no" }
     - { key: "X11Forwarding", value: "no" }
     - { key: "HostKeyAlgorithms", value: "-ssh-rsa*" }
+    - { key: "MaxAuthTries", value: "6" }
+    - { key: "PermitRootLogin", value: "no"}
+    - { key: "Ciphers", value: "chacha20-poly1305@openssh.com,aes128-ctr,aes192-ctr,aes256-ctr,aes128-gcm@openssh.com,aes256-gcm@openssh.com"}
+    - { key: "MACs", value: "umac-128-etm@openssh.com,hmac-sha2-256-etm@openssh.com,hmac-sha2-512-etm@openssh.com,umac-128@openssh.com,hmac-sha2-256,hmac-sha2-512"}
+    - { key: "KexAlgorithms", value: "curve25519-sha256,curve25519-sha256@libssh.org,ecdh-sha2-nistp256,ecdh-sha2-nistp384,ecdh-sha2-nistp521,diffie-hellman-group-exchange-sha256,diffie-hellman-group16-sha512,diffie-hellman-group18-sha512,diffie-hellman-group14-sha256"}
+    - { key: "ClientAliveInterval", value: "1800"}
+    - { key: "LoginGraceTime", value: "120"}
+    - { key: "MaxStartups", value: "10:30:60"}
   notify: "sshd config changed"
 
 #
