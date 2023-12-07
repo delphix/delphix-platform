@@ -330,6 +330,15 @@
     replace: '#\1'
 
 #
+# Restricting su access ensures only authorized users in a specific group
+# can elevate privileges to another user, like the root user
+#
+- replace:
+    dest: /etc/pam.d/su
+    regexp: '^#?[\s]*(auth[\s]+required[\s]+pam_wheel\.so.*)$'
+    replace: '\1'
+
+#
 # Prevent sshd from offering weak message authentication codes to clients.
 #
 # The "MACs" configuration parameter in sshd_config takes a list of algorithms
