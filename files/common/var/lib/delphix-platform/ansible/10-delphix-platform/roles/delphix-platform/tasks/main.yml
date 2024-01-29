@@ -246,6 +246,8 @@
     - { key: "AllowStreamLocalForwarding", value: "no" }
     - { key: "AllowTcpForwarding", value: "no" }
     - { key: "X11Forwarding", value: "no" }
+    - { key: "HostKeyAlgorithms", value: "-ssh-rsa*" }
+  notify: "sshd config changed"
 
 #
 # The CRA project mandated a 30 minute timeout for any idle connections.
@@ -300,12 +302,18 @@
     #
     - variant is regex("external-.*")
 #
-# Harden the appliance by disabling SFTP.
+# Harden the appliance by disabling SFTP on external variants.
 #
 - replace:
     path: /etc/ssh/sshd_config
     regexp: '^(Subsystem.*sftp.*)'
     replace: '#\1'
+  when:
+    #
+    # Disable sftp on external variants and leave it enabled on internal
+    # variants for developer convenience and to facilitate test automation.
+    #
+    - variant is regex("external-.*")
 
 #
 # Ssh leads to the CLI, not bash, so let's remove all the linuxy shell goodies,
@@ -320,6 +328,15 @@
     dest: /etc/pam.d/sshd
     regexp: '^(session[\s]+optional[\s]+pam_motd\.so.*)$'
     replace: '#\1'
+
+#
+# Restrict su access to users that are part of the root group (gid 0).
+# On a Delphix engine, this is restricted to the delphix user.
+#
+- replace:
+    dest: /etc/pam.d/su
+    regexp: '^#?[\s]*(auth[\s]+required[\s]+pam_wheel\.so.*)$'
+    replace: '\1'
 
 #
 # Prevent sshd from offering weak message authentication codes to clients.
@@ -681,3 +698,19 @@
   when:
     - variant == "internal-buildserver"
     - not ansible_is_chroot
+
+- name: Add systemctl bash completion
+  copy:
+    dest: "/etc/bash_completion.d/systemctl"
+    content: |
+      if [[ -r /usr/share/bash-completion/completions/systemctl ]]; then
+        . /usr/share/bash-completion/completions/systemctl && complete -F _systemctl systemctl
+      fi
+
+- name: Source bash completion
+  blockinfile:
+    dest: "/export/home/delphix/.bashrc"
+    block: |
+      . /etc/bash_completion.d/systemctl
+      . /etc/bash_completion.d/zfs
+      PATH=$PATH:/opt/delphix/server/bin
