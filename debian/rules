@@ -158,6 +158,7 @@ DEPENDS += aptitude, \
 	   memstat, \
 	   mtr-tiny, \
 	   ncdu, \
+	   netcat-openbsd, \
 	   pciutils, \
 	   performance-diagnostics, \
 	   procinfo, \

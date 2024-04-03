@@ -76,12 +76,16 @@
 #
 # Restrict cron permissions. All jobs are owned by root so there's no
 # reason to allow others any level of access. This is also necessary to
-# satisfy external auditing of CIS security benchmarks.
+# satisfy external auditing of CIS security benchmarks. Also ensuring
+# the permissions on /etc/ssh/sshd_config are configured.
 #
 - file:
-    path: /etc/crontab
+    path: "{{ item }}"
     state: file
     mode: 0600
+  with_items:
+    - /etc/crontab
+    - /etc/ssh/sshd_config
 
 - file:
     path: "{{ item }}"
@@ -228,6 +232,26 @@
     - 'delphix'
     - 'root'
 
+#
+# The 'ClientAliveInterval' setting determines the amount of time
+# (in seconds) the sshd server will wait to receive data from the
+# client before sending a request for response.
+#
+- set_fact:
+    ssh_client_alive_interval: "300"
+    ssh_client_alive_count_max: "3"
+
+#
+# With that said (see comment above), the Azure marketplace does not
+# allow a value greater than 3 minutes. So, when running on Azure, we
+# use 3 minutes.
+#
+- set_fact:
+    ssh_client_alive_interval: "180"
+    ssh_client_alive_count_max: "0"
+  when:
+    - platform == "azure"
+
 - lineinfile:
     path: /etc/ssh/sshd_config
     regexp: "^#?{{ item.key }} "
@@ -245,42 +269,18 @@
     - { key: "AllowAgentForwarding", value: "no" }
     - { key: "AllowStreamLocalForwarding", value: "no" }
     - { key: "AllowTcpForwarding", value: "no" }
-    - { key: "X11Forwarding", value: "no" }
-
-#
-# The CRA project mandated a 30 minute timeout for any idle connections.
-# By enabling an inactivity timeout we ensure that idle connections are
-# closed. Thus any sessions that are accidentally left opened at a
-# customer site will timeout preventing customers from gaining access to
-# our engine.
-#
-- set_fact:
-    ssh_client_alive_interval: "1800"
-
-#
-# With that said (see comment above), the Azure marketplace does not
-# allow a value greater than 3 minutes. So, when running on Azure, we
-# use 3 minutes.
-#
-- set_fact:
-    ssh_client_alive_interval: "180"
-  when: platform == "azure"
-
-- lineinfile:
-    path: /etc/ssh/sshd_config
-    regexp: "^#?{{ item.key }} "
-    line: "{{ item.key }} {{ item.value }}"
-  with_items:
+    - { key: "Ciphers", value: "chacha20-poly1305@openssh.com,aes128-ctr,aes192-ctr,aes256-ctr,aes128-gcm@openssh.com,aes256-gcm@openssh.com" }
+    - { key: "ClientAliveCountMax", value: "{{ ssh_client_alive_count_max }}" }
     - { key: "ClientAliveInterval", value: "{{ ssh_client_alive_interval }}" }
-    - { key: "ClientAliveCountMax", value: "0" }
-  when:
-    #
-    # For developer convenience, we only enable the CRA mandated timeout
-    # for external variants. The idle timeout can be a burden when we
-    # need to run long running processes over SSH on our internal
-    # systems (e.g. for development, testing, etc).
-    #
-    - variant is regex("external-.*")
+    - { key: "HostKeyAlgorithms", value: "-ssh-rsa*" }
+    - { key: "KexAlgorithms", value: "curve25519-sha256,curve25519-sha256@libssh.org,ecdh-sha2-nistp256,ecdh-sha2-nistp384,ecdh-sha2-nistp521,diffie-hellman-group-exchange-sha256,diffie-hellman-group16-sha512,diffie-hellman-group18-sha512,diffie-hellman-group14-sha256"}
+    - { key: "LoginGraceTime", value: "60"}
+    - { key: "MACs", value: "umac-128-etm@openssh.com,hmac-sha2-256-etm@openssh.com,hmac-sha2-512-etm@openssh.com,umac-128@openssh.com,hmac-sha2-256,hmac-sha2-512"}
+    - { key: "MaxAuthTries", value: "4" }
+    - { key: "MaxStartups", value: "10:30:60"}
+    - { key: "PermitRootLogin", value: "no" }
+    - { key: "X11Forwarding", value: "no" }
+  notify: "sshd config changed"
 
 - blockinfile:
     path: /etc/profile
@@ -300,12 +300,18 @@
     #
     - variant is regex("external-.*")
 #
-# Harden the appliance by disabling SFTP.
+# Harden the appliance by disabling SFTP on external variants.
 #
 - replace:
     path: /etc/ssh/sshd_config
     regexp: '^(Subsystem.*sftp.*)'
     replace: '#\1'
+  when:
+    #
+    # Disable sftp on external variants and leave it enabled on internal
+    # variants for developer convenience and to facilitate test automation.
+    #
+    - variant is regex("external-.*")
 
 #
 # Ssh leads to the CLI, not bash, so let's remove all the linuxy shell goodies,
@@ -322,36 +328,13 @@
     replace: '#\1'
 
 #
-# Prevent sshd from offering weak message authentication codes to clients.
+# Restrict su access to users that are part of the root group (gid 0).
+# On a Delphix engine, this is restricted to the delphix user.
 #
-# The "MACs" configuration parameter in sshd_config takes a list of algorithms
-# as its parameter. This list may be prefixed by a '+' or '-' operator
-# (indicating that the given list should be appended to or removed from the
-# existing MAC set, respectively), or neither operator (indicating that the
-# given list should replace the existing MAC set). If there already exists a
-# "MACs -..."  line, we can append to this list. If otherwise, we need to add
-# this as a separate line in the configuration.
-#
-- shell: grep -c -E "^MACs(\s+)-" /etc/ssh/sshd_config || true
-  register: grep_sshd_config_macs_to_remove
-
-- shell: grep -c -E "^MACs(\s+)-(.*)hmac-sha1\*,umac-64\*" /etc/ssh/sshd_config || true
-  register: grep_sshd_config_macs_already_removed
-
-- lineinfile:
-    path: /etc/ssh/sshd_config
-    backrefs: yes
-    regexp: '^MACs[\s]+-(.*)$'
-    line: 'MACs -\1,hmac-sha1*,umac-64*'
-  notify: "sshd config changed"
-  when: grep_sshd_config_macs_to_remove.stdout != "0" and grep_sshd_config_macs_already_removed == "0"
-
-- lineinfile:
-    path: /etc/ssh/sshd_config
-    insertafter: EOF
-    line: "MACs -hmac-sha1*,umac-64*"
-  notify: "sshd config changed"
-  when: grep_sshd_config_macs_to_remove.stdout == "0"
+- replace:
+    dest: /etc/pam.d/su
+    regexp: '^#?[\s]*(auth[\s]+required[\s]+pam_wheel\.so.*)$'
+    replace: '\1'
 
 #
 # Enable SNMP client tools to load MIBs by default.
@@ -681,3 +664,30 @@
   when:
     - variant == "internal-buildserver"
     - not ansible_is_chroot
+
+- name: Add systemctl bash completion
+  copy:
+    dest: "/etc/bash_completion.d/systemctl"
+    content: |
+      if [[ -r /usr/share/bash-completion/completions/systemctl ]]; then
+        . /usr/share/bash-completion/completions/systemctl && complete -F _systemctl systemctl
+      fi
+
+- name: Source bash completion
+  blockinfile:
+    dest: "/export/home/delphix/.bashrc"
+    block: |
+      . /etc/bash_completion.d/systemctl
+      . /etc/bash_completion.d/zfs
+      PATH=$PATH:/opt/delphix/server/bin
+
+#
+# CIS: Set default umask (DLPX-87205)
+# We need to set default umask as 027 in the /etc/bash.bashrc file,
+# so that the same can be applied for all the users on the engine.
+#
+- blockinfile:
+    path: /etc/bash.bashrc
+    block: |
+      # Set default umask value.
+      umask 027
