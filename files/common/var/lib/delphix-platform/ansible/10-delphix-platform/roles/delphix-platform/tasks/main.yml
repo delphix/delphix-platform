@@ -337,6 +337,36 @@
     replace: '\1'
 
 #
+#
+# Lock out the user after an unsuccessful consecutive login attempts.
+#
+- lineinfile:
+    path: /etc/pam.d/common-auth
+    line: "{{ item }}"
+  with_items:
+    - 'auth required pam_tally2.so onerr=fail audit silent deny=5 unlock_time=900'
+
+#
+#
+# Configuration to remember user password history.
+#
+- lineinfile:
+    path: /etc/pam.d/common-password
+    line: "{{ item }}"
+  with_items:
+    - 'password required pam_pwhistory.so remember=5'
+
+#
+#
+# Configuration to enforce account lockout policies.
+#
+- lineinfile:
+    path: /etc/pam.d/common-account
+    line: "{{ item }}"
+  with_items:
+    - 'auth required pam_tally2.so deny=5 unlock_time=900 audit'
+
+#
 # Enable SNMP client tools to load MIBs by default.
 #
 - replace:
