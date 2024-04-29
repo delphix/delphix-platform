@@ -534,6 +534,19 @@
     replace: 'disk/by-id/wwn/'
 
 #
+# The default udev persistent storage rule will call 'blkid' on every
+# device except sr devices.  This can be very expensive when running
+# on a system with lots of zvols and can result in udev event storms
+# that can last hours. This will override the default rule and skip this
+# call on zvols.
+#
+- lineinfile:
+    path: /etc/udev/rules.d/60-persistent-storage.rules
+    backrefs: yes
+    regexp: '(KERNEL!="sr\*)\"(.*)'
+    line: '\1|zd*"\2'
+
+#
 # Enable CRA for external variants
 #
 - command: pam-auth-update {{ item }}
