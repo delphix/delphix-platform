@@ -1,0 +1,104 @@
+#!/bin/bash
+#
+# Copyright 2024 Delphix
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+function die() {
+	echo "$(basename "$0"): $*" >&2
+	exit 1
+}
+
+function usage() {
+	echo "$(basename "$0"): $*" >&2
+	echo "Usage: $(basename "$0")"
+	exit 2
+}
+
+function get_bootloader_devices() {
+	#
+	# When installing/updating the bootloader during upgrade, we
+	# need to determine which devices are being used as bootloader
+	# devices. We determine this by listing the devices used by the
+	# rpool. Additionally, we have to filter out devices that could
+	# be attached to the rpool, but would never be used for the
+	# bootloader. Finally, we need to strip off any parition
+	# information, since we want to install the bootloader directly
+	# to the device, rather than to a partition of the device.
+	#
+	zpool list -vH rpool |
+		awk '! /rpool|mirror|replacing|spare/ {print $1}' |
+		while read -r part; do
+			#
+			# If the rpool is not installed a parition, we throw
+			# an error. We expect this to never happen, and the
+			# calling code is likely untested in that case, so we
+			# throw an error rather than try to handle it.
+			#
+			[[ "$(lsblk --nodeps -no type "/dev/$part")" == "part" ]] ||
+				die "rpool installed on full disk \"$part\""
+			lsblk -no pkname "/dev/$part"
+		done
+}
+
+function update_bootloader_cleanup() {
+	[[ -n "$MKTEMP" ]] && umount "$MKTEMP"
+	unset MKTEMP
+}
+
+function update_bootloader() {
+	trap update_bootloader_cleanup EXIT
+
+	MKTEMP=$(mktemp -d -p "/tmp" -t bootloader.XXXXXXX)
+
+	mount -t zfs rpool/grub "$MKTEMP" ||
+		die "'mount -t zfs rpool/grub' failed"
+
+	for dev in $(get_bootloader_devices); do
+		[[ -e "/dev/$dev" ]] ||
+			die "bootloader device '/dev/$dev' not found"
+
+		[[ -b "/dev/$dev" ]] ||
+			die "bootloader device '/dev/$dev' not block device"
+
+		grub-install --root-directory="$MKTEMP" "/dev/$dev" ||
+			die "'grub-install' for '$dev' failed"
+	done
+
+	grub-mkconfig -o "$MKTEMP/boot/grub/grub.cfg" ||
+		die "'grub-mkconfig' failed"
+
+	update_bootloader_cleanup
+	trap - EXIT
+}
+
+[[ $# -gt 0 ]] && usage "too many arguments specified"
+[[ "$EUID" -ne 0 ]] && die "must be run as root"
+
+#
+# We only have a single bootloader on any given appliance, so we
+# need to ensure that only a single process is attempting to
+# update the bootloader at any given time. The locking done here
+# is to help prevent accidential corruption of the bootloader,
+# by ensuring only a single invocation of this script can set
+# the boot filesystem at any given time.
+#
+# Note, we use the same lock file path here as the upgrade scripts.
+#
+if [[ "$SET_BOOTFS_LOCKED" != "true" ]]; then
+	exec env SET_BOOTFS_LOCKED="true" \
+		flock -e "/var/run/delphix-set-bootfs-lock" "$0" "$@"
+fi
+
+update_bootloader
