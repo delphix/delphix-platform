@@ -20,9 +20,20 @@ function die() {
 	exit 1
 }
 
+function warn() {
+	echo "$(basename "$0"): $*" >&2
+}
+
 function usage() {
 	echo "$(basename "$0"): $*" >&2
-	echo "Usage: $(basename "$0")"
+
+	PREFIX_STRING="Usage: $(basename "$0")"
+	PREFIX_NCHARS=$(echo -n "$PREFIX_STRING" | wc -c)
+	PREFIX_SPACES=$(printf "%.s " $(seq "$PREFIX_NCHARS"))
+
+	echo "$PREFIX_STRING update"
+	echo "$PREFIX_SPACES recover <rpool> <rootfs>"
+
 	exit 2
 }
 
@@ -37,8 +48,8 @@ function get_bootloader_devices() {
 	# information, since we want to install the bootloader directly
 	# to the device, rather than to a partition of the device.
 	#
-	zpool list -vH rpool |
-		awk '! /rpool|mirror|replacing|spare/ {print $1}' |
+	zpool list -vH "$1" | tail -n -1 |
+		awk '! /mirror|replacing|spare/ {print $1}' |
 		while read -r part; do
 			#
 			# If the rpool is not installed a parition, we throw
@@ -53,19 +64,20 @@ function get_bootloader_devices() {
 }
 
 function update_bootloader_cleanup() {
-	[[ -n "$MKTEMP" ]] && umount "$MKTEMP"
-	unset MKTEMP
+	[[ -n "$MKTEMP" ]] || return
+	umount "$MKTEMP" || warn "'umount' of '$MKTEMP' failed"
+	rm -d "$MKTEMP" || warn "'rm -d $MKTEMP' failed"
 }
 
 function update_bootloader() {
+	MKTEMP=$(mktemp -d -p "/var/tmp" -t bootloader.XXXXXXX)
+
 	trap update_bootloader_cleanup EXIT
 
-	MKTEMP=$(mktemp -d -p "/tmp" -t bootloader.XXXXXXX)
+	mount -t zfs "${1}/grub" "$MKTEMP" ||
+		die "'mount -t zfs ${1}/grub' failed"
 
-	mount -t zfs rpool/grub "$MKTEMP" ||
-		die "'mount -t zfs rpool/grub' failed"
-
-	for dev in $(get_bootloader_devices); do
+	for dev in $(get_bootloader_devices "$1"); do
 		[[ -e "/dev/$dev" ]] ||
 			die "bootloader device '/dev/$dev' not found"
 
@@ -83,7 +95,61 @@ function update_bootloader() {
 	trap - EXIT
 }
 
-[[ $# -gt 0 ]] && usage "too many arguments specified"
+function recover_bootloader_cleanup() {
+	umount "/$RPOOL/mnt" ||
+		warn "'umount' of '/$RPOOL/mnt' failed"
+
+	for dir in /proc /sys /dev; do
+		umount -R "/${RPOOL}${dir}" ||
+			warn "'umount -R' of '$dir' failed"
+	done
+
+	zfs umount "$RPOOL/ROOT/$CONTAINER/root" ||
+		warn "'zfs umount $RPOOL/ROOT/$CONTAINER/root' failed"
+}
+
+function recover_bootloader() {
+	RPOOL="$1"
+	CONTAINER="$2"
+
+	trap recover_bootloader_cleanup EXIT
+
+	zfs mount "$RPOOL/ROOT/$CONTAINER/root" ||
+		die "'zfs mount $RPOOL/ROOT/$CONTAINER/root' failed"
+
+	mount --make-slave "/$RPOOL" ||
+		die "'mount --make-slave /$RPOOL' failed"
+
+	for dir in /proc /sys /dev; do
+		mount --rbind "$dir" "/${RPOOL}${dir}" ||
+			die "'mount --rbind' of '$dir' failed"
+		mount --make-rslave "/${RPOOL}${dir}" ||
+			die "'mount --make-rslave' of '$dir' failed"
+	done
+
+	mount -t zfs "$RPOOL/grub" "/$RPOOL/mnt" ||
+		die "'mount -t zfs $RPOOL/grub' failed for '$CONTAINER'"
+
+	for dev in $(get_bootloader_devices "$RPOOL"); do
+		[[ -e "/dev/$dev" ]] ||
+			die "bootloader device '/dev/$dev' not found"
+
+		[[ -b "/dev/$dev" ]] ||
+			die "bootloader device '/dev/$dev' not block device"
+
+		chroot "/$RPOOL" \
+			grub-install --root-directory=/mnt "/dev/$dev" ||
+			die "'grub-install' for '$dev' failed in '$CONTAINER'"
+	done
+
+	chroot "/$RPOOL" \
+		grub-mkconfig -o /mnt/boot/grub/grub.cfg ||
+		die "'grub-mkconfig' failed in '$CONTAINER'"
+
+	recover_bootloader_cleanup
+	trap - EXIT
+}
+
 [[ "$EUID" -ne 0 ]] && die "must be run as root"
 
 #
@@ -101,4 +167,16 @@ if [[ "$SET_BOOTFS_LOCKED" != "true" ]]; then
 		flock -e "/var/run/delphix-set-bootfs-lock" "$0" "$@"
 fi
 
-update_bootloader
+case "$1" in
+update)
+	update_bootloader "rpool"
+	;;
+recover)
+	[[ -n "$2" ]] || usage "rpool name not specified"
+	[[ -n "$3" ]] || usage "rootfs container name not specified"
+	recover_bootloader "$2" "$3"
+	;;
+*)
+	usage "invalid option -- '$1'"
+	;;
+esac
