@@ -84,7 +84,8 @@ function update_bootloader() {
 		[[ -b "/dev/$dev" ]] ||
 			die "bootloader device '/dev/$dev' not block device"
 
-		grub-install --root-directory="$MKTEMP" "/dev/$dev" ||
+		grub-install -v --debug-image=all \
+			--root-directory="$MKTEMP" "/dev/$dev" ||
 			die "'grub-install' for '$dev' failed"
 	done
 
@@ -138,7 +139,8 @@ function recover_bootloader() {
 			die "bootloader device '/dev/$dev' not block device"
 
 		chroot "/$RPOOL" \
-			grub-install --root-directory=/mnt "/dev/$dev" ||
+			grub-install -v --debug-image=all \
+			--root-directory=/mnt "/dev/$dev" ||
 			die "'grub-install' for '$dev' failed in '$CONTAINER'"
 	done
 
