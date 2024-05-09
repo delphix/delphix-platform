@@ -545,6 +545,7 @@
     backrefs: yes
     regexp: '(KERNEL!="sr\*)\"(.*)'
     line: '\1|zd*"\2'
+  notify: "udev config changed"
 
 #
 # Enable CRA for external variants
