@@ -37,3 +37,7 @@
     state: restarted
   listen: "vmware-tools config changed"
   when: ansible_virtualization_type != "systemd-nspawn" and not ansible_is_chroot
+
+- command: /usr/bin/udevadm control --reload
+  listen: "udev config changed"
+  when: ansible_virtualization_type != "systemd-nspawn" and not ansible_is_chroot
