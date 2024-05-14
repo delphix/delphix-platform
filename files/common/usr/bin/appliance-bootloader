@@ -1,0 +1,184 @@
+#!/bin/bash
+#
+# Copyright 2024 Delphix
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+function die() {
+	echo "$(basename "$0"): $*" >&2
+	exit 1
+}
+
+function warn() {
+	echo "$(basename "$0"): $*" >&2
+}
+
+function usage() {
+	echo "$(basename "$0"): $*" >&2
+
+	PREFIX_STRING="Usage: $(basename "$0")"
+	PREFIX_NCHARS=$(echo -n "$PREFIX_STRING" | wc -c)
+	PREFIX_SPACES=$(printf "%.s " $(seq "$PREFIX_NCHARS"))
+
+	echo "$PREFIX_STRING update"
+	echo "$PREFIX_SPACES recover <rpool> <rootfs>"
+
+	exit 2
+}
+
+function get_bootloader_devices() {
+	#
+	# When installing/updating the bootloader during upgrade, we
+	# need to determine which devices are being used as bootloader
+	# devices. We determine this by listing the devices used by the
+	# rpool. Additionally, we have to filter out devices that could
+	# be attached to the rpool, but would never be used for the
+	# bootloader. Finally, we need to strip off any parition
+	# information, since we want to install the bootloader directly
+	# to the device, rather than to a partition of the device.
+	#
+	zpool list -vH "$1" | tail -n -1 |
+		awk '! /mirror|replacing|spare/ {print $1}' |
+		while read -r part; do
+			#
+			# If the rpool is not installed a parition, we throw
+			# an error. We expect this to never happen, and the
+			# calling code is likely untested in that case, so we
+			# throw an error rather than try to handle it.
+			#
+			[[ "$(lsblk --nodeps -no type "/dev/$part")" == "part" ]] ||
+				die "rpool installed on full disk \"$part\""
+			lsblk -no pkname "/dev/$part"
+		done
+}
+
+function update_bootloader_cleanup() {
+	[[ -n "$MKTEMP" ]] || return
+	umount "$MKTEMP" || warn "'umount' of '$MKTEMP' failed"
+	rm -d "$MKTEMP" || warn "'rm -d $MKTEMP' failed"
+}
+
+function update_bootloader() {
+	MKTEMP=$(mktemp -d -p "/var/tmp" -t bootloader.XXXXXXX)
+
+	trap update_bootloader_cleanup EXIT
+
+	mount -t zfs "${1}/grub" "$MKTEMP" ||
+		die "'mount -t zfs ${1}/grub' failed"
+
+	for dev in $(get_bootloader_devices "$1"); do
+		[[ -e "/dev/$dev" ]] ||
+			die "bootloader device '/dev/$dev' not found"
+
+		[[ -b "/dev/$dev" ]] ||
+			die "bootloader device '/dev/$dev' not block device"
+
+		grub-install -v --debug-image=all \
+			--root-directory="$MKTEMP" "/dev/$dev" ||
+			die "'grub-install' for '$dev' failed"
+	done
+
+	grub-mkconfig -o "$MKTEMP/boot/grub/grub.cfg" ||
+		die "'grub-mkconfig' failed"
+
+	update_bootloader_cleanup
+	trap - EXIT
+}
+
+function recover_bootloader_cleanup() {
+	umount "/$RPOOL/mnt" ||
+		warn "'umount' of '/$RPOOL/mnt' failed"
+
+	for dir in /proc /sys /dev; do
+		umount -R "/${RPOOL}${dir}" ||
+			warn "'umount -R' of '$dir' failed"
+	done
+
+	zfs umount "$RPOOL/ROOT/$CONTAINER/root" ||
+		warn "'zfs umount $RPOOL/ROOT/$CONTAINER/root' failed"
+}
+
+function recover_bootloader() {
+	RPOOL="$1"
+	CONTAINER="$2"
+
+	trap recover_bootloader_cleanup EXIT
+
+	zfs mount "$RPOOL/ROOT/$CONTAINER/root" ||
+		die "'zfs mount $RPOOL/ROOT/$CONTAINER/root' failed"
+
+	mount --make-slave "/$RPOOL" ||
+		die "'mount --make-slave /$RPOOL' failed"
+
+	for dir in /proc /sys /dev; do
+		mount --rbind "$dir" "/${RPOOL}${dir}" ||
+			die "'mount --rbind' of '$dir' failed"
+		mount --make-rslave "/${RPOOL}${dir}" ||
+			die "'mount --make-rslave' of '$dir' failed"
+	done
+
+	mount -t zfs "$RPOOL/grub" "/$RPOOL/mnt" ||
+		die "'mount -t zfs $RPOOL/grub' failed for '$CONTAINER'"
+
+	for dev in $(get_bootloader_devices "$RPOOL"); do
+		[[ -e "/dev/$dev" ]] ||
+			die "bootloader device '/dev/$dev' not found"
+
+		[[ -b "/dev/$dev" ]] ||
+			die "bootloader device '/dev/$dev' not block device"
+
+		chroot "/$RPOOL" \
+			grub-install -v --debug-image=all \
+			--root-directory=/mnt "/dev/$dev" ||
+			die "'grub-install' for '$dev' failed in '$CONTAINER'"
+	done
+
+	chroot "/$RPOOL" \
+		grub-mkconfig -o /mnt/boot/grub/grub.cfg ||
+		die "'grub-mkconfig' failed in '$CONTAINER'"
+
+	recover_bootloader_cleanup
+	trap - EXIT
+}
+
+[[ "$EUID" -ne 0 ]] && die "must be run as root"
+
+#
+# We only have a single bootloader on any given appliance, so we
+# need to ensure that only a single process is attempting to
+# update the bootloader at any given time. The locking done here
+# is to help prevent accidential corruption of the bootloader,
+# by ensuring only a single invocation of this script can set
+# the boot filesystem at any given time.
+#
+# Note, we use the same lock file path here as the upgrade scripts.
+#
+if [[ "$SET_BOOTFS_LOCKED" != "true" ]]; then
+	exec env SET_BOOTFS_LOCKED="true" \
+		flock -e "/var/run/delphix-set-bootfs-lock" "$0" "$@"
+fi
+
+case "$1" in
+update)
+	update_bootloader "rpool"
+	;;
+recover)
+	[[ -n "$2" ]] || usage "rpool name not specified"
+	[[ -n "$3" ]] || usage "rootfs container name not specified"
+	recover_bootloader "$2" "$3"
+	;;
+*)
+	usage "invalid option -- '$1'"
+	;;
+esac
