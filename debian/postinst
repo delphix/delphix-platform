@@ -50,7 +50,7 @@ configure)
 	# want those to be sent externally via SMTP (or equivalent). Thus,
 	# we disable this service, so that it doesn't send external mails.
 	#
-	systemctl disable --now nullmailer.service
+	systemctl disable nullmailer.service
 
 	systemctl enable auditd.service
 	systemctl enable delphix.target
