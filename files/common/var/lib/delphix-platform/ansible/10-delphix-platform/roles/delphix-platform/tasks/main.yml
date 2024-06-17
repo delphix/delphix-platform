@@ -705,12 +705,3 @@
     block: |
       # Set default umask value.
       umask 027
-
-- file:
-    src: /bin/true
-    dest: /usr/lib/nullmailer/true
-    state: link
-
-- copy:
-    dest: "/etc/nullmailer/remotes"
-    content: "localhost true"
