@@ -705,3 +705,8 @@
     block: |
       # Set default umask value.
       umask 027
+
+- service:
+    name: "nullmailer"
+    state: "stopped"
+  when: not ansible_is_chroot
