@@ -1,0 +1,34 @@
+#!/bin/bash -e
+#
+# Copyright 2023 Delphix
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+function die() {
+	echo "$(basename "$0"): $*" >&2
+	exit 1
+}
+
+[[ $# -gt 1 ]] && usage "too many arguments specified"
+[[ $# -eq 0 ]] && usage "too few arguments specified"
+
+[[ "$EUID" -ne 0 ]] && die "must be run as root"
+
+DISK_PATH="$(readlink -f "$1")"
+
+set -o xtrace
+sgdisk --zap-all "$DISK_PATH"
+sgdisk "$DISK_PATH" --set-alignment=1 --new=2:1m:+1m --typecode=2:EF02
+sgdisk "$DISK_PATH" --new=1:: --typecode=1:8300
+sgdisk "$DISK_PATH" --print
