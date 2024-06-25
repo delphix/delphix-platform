@@ -22,7 +22,7 @@
 # it below; otherwise that task will fail.
 #
 - file:
-    path: /export/home
+    path: /home
     state: directory
     mode: 0755
 
@@ -35,7 +35,7 @@
     shell: /bin/bash
     create_home: yes
     comment: Delphix User
-    home: /export/home/delphix
+    home: /home/delphix
 
 #
 # In order for this locale to be used (e.g. by virtualization) we need
