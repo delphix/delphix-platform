@@ -22,7 +22,7 @@
 # it below; otherwise that task will fail.
 #
 - file:
-    path: /export/home
+    path: /home
     state: directory
     mode: 0755
 
@@ -35,7 +35,26 @@
     shell: /bin/bash
     create_home: yes
     comment: Delphix User
-    home: /export/home/delphix
+    home: /home/delphix
+
+#
+# When it's an upgrade in that case the home dateset
+# is required to be mounted on mount point /home
+# from the old mount point /export/home
+#
+- command: mount
+  register: mount_home
+  ignore_errors: True
+- set_fact:
+    export_home: "{{ mount_home.stdout | regex_search(export_home_regex, multiline=True)}}"
+  vars:
+    export_home_regex: "rpool/ROOT/delphix.[a-zA-Z0-9]+/home on /export/home"
+- debug: msg={{ export_home }}
+- replace:
+    path: /etc/fstab
+    regexp: '/export/home'
+    replace: '/home'
+  when: export_home | length > 0
 
 #
 # In order for this locale to be used (e.g. by virtualization) we need
@@ -689,7 +708,7 @@
 
 - name: Source bash completion
   blockinfile:
-    dest: "/export/home/delphix/.bashrc"
+    dest: "/home/delphix/.bashrc"
     block: |
       . /etc/bash_completion.d/systemctl
       . /etc/bash_completion.d/zfs
@@ -710,3 +729,14 @@
     name: "nullmailer"
     state: "stopped"
   when: not ansible_is_chroot
+
+#
+# The presence of the auto_home is an issue
+# because this is also mounted on /home so
+# we need to remove this.
+#
+
+- lineinfile:
+    path: /etc/auto.master
+    line: "/home   auto_home    -nobrowse"
+    state: absent
