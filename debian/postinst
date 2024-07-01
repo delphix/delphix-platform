@@ -45,6 +45,13 @@ configure)
 	systemctl disable motd-news.service
 	systemctl disable motd-news.timer
 
+	#
+	# Various tools generate mail on the system, e.g. cron, and we don't
+	# want those to be sent externally via SMTP (or equivalent). Thus,
+	# we disable this service, so that it doesn't send external mails.
+	#
+	systemctl disable nullmailer.service
+
 	systemctl enable auditd.service
 	systemctl enable delphix.target
 	systemctl enable delphix-platform.service
