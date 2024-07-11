@@ -111,7 +111,10 @@ configure)
 		# boot process. The update-initramfs command builds a new initramfs image and includes our modified rule in the updated image.
 		update-initramfs -u -t -k "$(uname -r)"
 	fi
-
+  if mount |  grep -q "\/export\/home"
+  then
+    umount /export/home
+  fi
 	;;
 esac
 
