@@ -22,7 +22,7 @@
 # it below; otherwise that task will fail.
 #
 - file:
-    path: /export/home
+    path: /home
     state: directory
     mode: 0755
 
@@ -35,7 +35,7 @@
     shell: /bin/bash
     create_home: yes
     comment: Delphix User
-    home: /export/home/delphix
+    home: /home/delphix
 
 #
 # In order for this locale to be used (e.g. by virtualization) we need
@@ -635,7 +635,7 @@
 
 - name: Source bash completion
   blockinfile:
-    dest: "/export/home/delphix/.bashrc"
+    dest: "/home/delphix/.bashrc"
     block: |
       . /etc/bash_completion.d/systemctl
       . /etc/bash_completion.d/zfs
@@ -684,3 +684,53 @@
     path: /etc/environment
     state: absent
     regexp: '^\s*PATH\s*='
+
+#
+# Soft link creation in case it doesn't exist
+#
+- name: Check export
+  ansible.builtin.stat:
+    path: /export
+  register: export_status
+
+- name: Check export home
+  ansible.builtin.stat:
+    path: /export/home
+  when: export_status.stat.exists and export_status.stat.isdir
+  register: export_home_status
+
+#
+# Before deleting the /export/home directory if the
+# home data set is mounted on /export/home if its
+# mounted remove if first and then go ahead.
+#
+- name: Check if the path is mounted
+  ansible.builtin.shell: |
+    mount | grep /export/home
+  register: mount_status
+  ignore_errors: yes
+
+- name: Unmount the path if it is mounted
+  ansible.builtin.mount:
+    path: /export/home
+    state: unmounted
+  when: mount_status.rc == 0
+
+- name: Delete home directory
+  ansible.builtin.file:
+    path: /export/home
+    state: absent
+  when: not export_status.stat.exists or export_home_status.stat.exists and export_home_status.stat.isdir
+
+- name: Create export directory
+  ansible.builtin.file:
+    path: /export
+    state: directory
+    mode: 0755
+  when: not export_status.stat.exists
+
+- name: Create the soft link
+  ansible.builtin.file:
+    src: /home
+    dest: /export/home
+    state: link
