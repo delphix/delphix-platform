@@ -1,0 +1,49 @@
+#!/bin/bash -eux
+#
+# Copyright 2024 Delphix
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+case $1 in
+upgrade)
+        # Checking the fstab file if the /export/home entry
+        # is present in the /etc/fstab, In case of container
+        # upgrade the file is already changed by the
+        # container-upgrade script and we dont need to do
+        # it again.
+        fs_tab=/etc/fstab
+        auto_master=/etc/auto.master
+
+        if grep -q "\/export\/home" "$fs_tab"
+        then
+	        sed -i 's|/export/home|/home|g' "$fs_tab"
+	        mount /home
+        fi
+
+        if [[ -e $auto_master  ]]
+        then
+          if grep -q "\/home\s+auto_home\s+-nobrowse" "$auto_master"
+          then
+            sed -i 's|/home   auto_home    -nobrowse|#/home   auto_home    -nobrowse|g' "$auto_master"
+            systemctl restart autofs
+          fi
+        fi
+
+        if mount |  grep -q "\/export\/home"
+        then
+	        umount /export/home
+        fi
+        ;;
+esac
+exit 0
