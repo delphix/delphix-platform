@@ -132,7 +132,7 @@ DEPENDS += aide, \
 #
 DEPENDS += aptitude, \
 	   awscli, \
-	   bcc-tools, \
+	   bcc, \
 	   bpftrace, \
 	   crash-python, \
 	   delphix-rust, \
