@@ -30,7 +30,7 @@ if [[ $# -gt 0 ]]; then
 	usage
 fi
 
-output=$(zfs get -Hpo value "com.delphix:app-version" "$(dirname "$(zfs list -Hpo name /)")")
+output=$(zfs get -Hpo value "com.delphix:packaged-app-version" "$(dirname "$(zfs list -Hpo name /)")")
 if [[ "$output" != "-" ]]; then
 	echo -n "$output"
 fi
