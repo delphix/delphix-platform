@@ -706,6 +706,13 @@
       # Set default umask value.
       umask 027
 
+- posix.mount:
+    path: /dev/shm
+    src: tmpfs
+    fstype: tmpfs
+    opts: defaults,noexec,nosuid,nodev
+    state: mounted
+
 - service:
     name: "nullmailer"
     state: "stopped"
