@@ -706,7 +706,8 @@
       # Set default umask value.
       umask 027
 
-- ansible.posix.mount:
+- name: Mount /dev/shm with noexec,nosuid,nodev
+  ansible.posix.mount:
     path: /dev/shm
     src: tmpfs
     fstype: tmpfs
