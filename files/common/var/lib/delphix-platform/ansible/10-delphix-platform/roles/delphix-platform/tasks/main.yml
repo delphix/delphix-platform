@@ -718,3 +718,12 @@
     name: "nullmailer"
     state: "stopped"
   when: not ansible_is_chroot
+
+#
+# Ensure /snap/bin is removed from PATH in /etc/environment
+#
+- lineinfile:
+    path: /etc/environment
+    regexp: '^PATH='
+    line: "{{ lookup('file', '/etc/environment') | regex_search('^PATH=.*') | regex_replace(':/snap/bin', '') }}"
+  when: "'/snap/bin' in lookup('file', '/etc/environment')"
