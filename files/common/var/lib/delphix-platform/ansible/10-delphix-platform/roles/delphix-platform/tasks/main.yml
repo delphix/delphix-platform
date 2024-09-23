@@ -738,3 +738,34 @@
     path: /etc/environment
     state: absent
     regexp: '^\s*PATH\s*='
+
+- lineinfile:
+    path: /etc/systemd/journald.conf
+    regexp: "{{ item.regex }}"
+    line: "{{ item.line }}"
+    state: present
+  with_items:
+    #
+    # Enable forwarding of journald logs to the syslog service
+    # This helps to ensure compatibility with legacy log systems
+    # that rely on syslog for centralized log collection.
+    #
+    - { regex: '^#?ForwardToSyslog=', line: 'ForwardToSyslog=yes' }
+    #
+    # Enable compression for journald logs to save disk space.
+    # Older log files will be compressed automatically, helping to
+    # retain logs longer without using excessive storage.
+    #
+    - { regex: '^#?Compress=', line: 'Compress=yes' }
+    #
+    # Configure journald to persistently keep logs on disk, ensuring
+    # logs are available after reboots. This is useful for post-reboot
+    # debugging and for collecting support bundles with log history.
+    #
+    - { regex: '^#?Storage=', line: 'Storage=persistent' }
+
+- name: Reload and restart systemd-journald to apply changes
+  ansible.builtin.systemd:
+    name: systemd-journald
+    state: restarted
+    daemon_reload: yes
