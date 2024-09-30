@@ -738,3 +738,37 @@
     path: /etc/environment
     state: absent
     regexp: '^\s*PATH\s*='
+
+
+#
+# Ensure Defaults use_pty is set in /etc/sudoers
+#
+- lineinfile:
+    path: /etc/sudoers
+    state: present
+    regexp: '^Defaults use_pty'
+    line: 'Defaults use_pty'
+
+#
+# Ensure Defaults logfile is set in /etc/sudoers
+#
+- lineinfile:
+    path: /etc/sudoers
+    state: present
+    regexp: '^Defaults logfile=/var/log/sudo.log'
+    line: 'Defaults logfile=/var/log/sudo.log'
+
+#
+# Create logrotate configuration for sudo.log
+#
+- copy:
+    dest: /etc/logrotate.d/sudo-log
+    content: |
+      /var/log/sudo.log {
+          weekly
+          rotate 4
+          compress
+          missingok
+          notifempty
+      }
+    mode: '0644'
