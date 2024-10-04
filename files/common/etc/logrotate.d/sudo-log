@@ -1,6 +1,3 @@
-#
-# Copyright 2024 Delphix
-#
 /var/log/sudo.log {
     weekly
     rotate 4
