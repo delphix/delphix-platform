@@ -1,0 +1,7 @@
+/var/log/sudo.log {
+    weekly
+    rotate 4
+    compress
+    missingok
+    notifempty
+}
