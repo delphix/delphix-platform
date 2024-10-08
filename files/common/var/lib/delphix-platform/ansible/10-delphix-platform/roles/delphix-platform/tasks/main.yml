@@ -739,11 +739,19 @@
     state: absent
     regexp: '^\s*PATH\s*='
 
-- file:
+# Check if the specified directories exist to update the permissions
+- stat:
     path: "{{ item }}"
-    state: directory
-    mode: 0750
   with_items:
     - /export/home/delphix
     - /export/home/cli
     - /var/lib/postgresql
+  register: dir_check
+
+# Update the permissions of the directory only if it exists
+- file:
+    path: "{{ item.stat.path }}"
+    state: directory
+    mode: 0750
+  when: item.stat.exists
+  with_items: "{{ dir_check.results }}"
