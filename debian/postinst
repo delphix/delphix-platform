@@ -70,6 +70,8 @@ configure)
 		# postgres UID. Note that we put this code here instead of the
 		# delphix-platform service as we need it to be executed before
 		# the postgres package gets installed.
+		sed -i 's/^UID_MAX.*/UID_MAX 65437/g' /etc/login.defs
+		sed -i 's/^GID_MAX.*/GID_MAX 65437/g' /etc/login.defs
 		addgroup postgres --gid 65437
 		adduser --home /var/lib/postgresql --no-create-home \
 			--shell /bin/bash --ingroup postgres \

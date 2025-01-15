@@ -85,6 +85,7 @@ DEPENDS += ansible, \
 	   rsyslog, \
 	   sudo, \
 	   systemd-container, \
+	   systemd-resolved, \
 	   tzdata, \
 	   udev,
 
@@ -111,14 +112,6 @@ DEPENDS += $(DEPENDS.$(TARGET_PLATFORM))
 DEPENDS += delphix-build-info,
 
 #
-# The usrmerge package modifies the layout of directories under root (/) upon
-# installation, to ensure that a Delphix Engine upgraded to Ubuntu 20.04 has
-# the same directory layout as a Delphix Engine that initially came on
-# Ubuntu 20.04 (or later).
-#
-DEPENDS += usrmerge,
-
-#
 # These packages help strengthen the security of the appliance by identifying
 # and preventing undesired behaviors.
 #
@@ -131,18 +124,16 @@ DEPENDS += aide, \
 # or replaced without regard for backward compatibility.
 #
 DEPENDS += aptitude, \
-	   awscli, \
-	   bcc-tools, \
+	   bcc, \
 	   bpftrace, \
 	   crash-python, \
 	   delphix-rust, \
 	   dnsutils, \
-	   drgn, \
+	   python3-drgn, \
 	   dstat, \
 	   emacs-nox, \
 	   ethtool, \
 	   gdb, \
-	   gdb-python, \
 	   htop, \
 	   iftop, \
 	   inotify-tools, \
@@ -150,7 +141,7 @@ DEPENDS += aptitude, \
 	   jq, \
 	   kdump-tools, \
 	   ldap-utils, \
-	   libkdumpfile, \
+	   libkdumpfile10, \
 	   linux-tools-common, \
 	   lsof, \
 	   man-db, \
@@ -229,4 +220,3 @@ override_dh_auto_test:
 	# testing via another mechanism, so running it during package
 	# builds is unnecessary.
 	#
-
