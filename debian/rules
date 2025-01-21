@@ -41,6 +41,7 @@ DEPENDS = delphix-kernel-$(KERNEL_TYPE.$(TARGET_PLATFORM)),
 # that are leveraging ZFS as their root filesystem.
 #
 DEPENDS += grub-pc, \
+	   grub-efi-amd64-bin, \
 	   delphix-zfs,
 
 #
@@ -59,6 +60,9 @@ DEPENDS += ansible, \
 	   debootstrap, \
 	   debsums, \
 	   dmidecode, \
+	   dosfstools, \
+	   efibootmgr, \
+	   efitools, \
 	   init, \
 	   iproute2, \
 	   iputils-ping, \
@@ -84,6 +88,7 @@ DEPENDS += ansible, \
 	   rng-tools, \
 	   rsyslog, \
 	   sudo, \
+	   systemd-boot, \
 	   systemd-container, \
 	   systemd-resolved, \
 	   tzdata, \
