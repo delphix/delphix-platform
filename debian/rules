@@ -40,7 +40,7 @@ DEPENDS = delphix-kernel-$(KERNEL_TYPE.$(TARGET_PLATFORM)),
 # The following packages are required in order to generate VM artifacts
 # that are leveraging ZFS as their root filesystem.
 #
-DEPENDS += grub-pc, \
+DEPENDS += grub-efi-amd64, \
 	   delphix-zfs,
 
 #
@@ -59,6 +59,10 @@ DEPENDS += ansible, \
 	   debootstrap, \
 	   debsums, \
 	   dmidecode, \
+	   dosfstools, \
+	   efibootmgr, \
+	   efitools, \
+	   grub-efi-amd64, \
 	   init, \
 	   iproute2, \
 	   iputils-ping, \
@@ -84,6 +88,7 @@ DEPENDS += ansible, \
 	   rng-tools, \
 	   rsyslog, \
 	   sudo, \
+	   systemd-boot, \
 	   systemd-container, \
 	   systemd-resolved, \
 	   tzdata, \
