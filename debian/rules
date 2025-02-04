@@ -59,6 +59,7 @@ DEPENDS += ansible, \
 	   debootstrap, \
 	   debsums, \
 	   dmidecode, \
+	   efitools, \
 	   init, \
 	   iproute2, \
 	   iputils-ping, \
@@ -84,6 +85,7 @@ DEPENDS += ansible, \
 	   rng-tools, \
 	   rsyslog, \
 	   sudo, \
+	   systemd-boot, \
 	   systemd-container, \
 	   tzdata, \
 	   udev,
