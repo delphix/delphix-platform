@@ -130,7 +130,6 @@ DEPENDS += aptitude, \
 	   delphix-rust, \
 	   dnsutils, \
 	   python3-drgn, \
-	   dstat, \
 	   emacs-nox, \
 	   ethtool, \
 	   gdb, \
