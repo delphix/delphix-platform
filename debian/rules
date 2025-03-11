@@ -129,7 +129,7 @@ DEPENDS += aptitude, \
 	   crash-python, \
 	   delphix-rust, \
 	   dnsutils, \
-	   python3-drgn, \
+	   drgn, \
 	   emacs-nox, \
 	   ethtool, \
 	   gdb, \
