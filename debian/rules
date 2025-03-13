@@ -140,7 +140,7 @@ DEPENDS += aptitude, \
 	   jq, \
 	   kdump-tools, \
 	   ldap-utils, \
-	   libkdumpfile10, \
+	   libkdumpfile, \
 	   linux-tools-common, \
 	   lsof, \
 	   man-db, \
