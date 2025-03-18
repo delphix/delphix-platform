@@ -131,7 +131,6 @@ DEPENDS += aptitude, \
 	   delphix-rust, \
 	   dnsutils, \
 	   drgn, \
-	   emacs-nox, \
 	   ethtool, \
 	   gdb, \
 	   htop, \
