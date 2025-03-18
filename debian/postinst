@@ -17,6 +17,13 @@
 
 case $1 in
 configure)
+	#
+	# We've seen cases where upgrade bumps the systemd version drastically
+	# enough, such that we need to restart the process in order for systemctl
+	# commands to work properly. Thus, we restart systemd here.
+	#
+	systemctl daemon-reexec
+
 	systemctl disable apt-daily.service
 	systemctl disable apt-daily.timer
 

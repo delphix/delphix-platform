@@ -84,6 +84,7 @@ DEPENDS += ansible, \
 	   rng-tools, \
 	   rsyslog, \
 	   sudo, \
+	   systemd, \
 	   systemd-container, \
 	   systemd-resolved, \
 	   tzdata, \
