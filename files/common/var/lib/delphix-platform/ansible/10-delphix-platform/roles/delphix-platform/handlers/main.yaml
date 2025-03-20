@@ -27,7 +27,7 @@
   when: ansible_virtualization_type != "systemd-nspawn" and not ansible_is_chroot
 
 - systemd:
-    name: sshd
+    name: ssh
     state: reloaded
   listen: "sshd config changed"
   when: ansible_virtualization_type != "systemd-nspawn" and not ansible_is_chroot
