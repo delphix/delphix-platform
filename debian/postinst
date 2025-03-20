@@ -52,8 +52,13 @@ configure)
 	#
 	systemctl disable nullmailer.service
 
+	systemctl unmask auditd.service
 	systemctl enable auditd.service
+
+	systemctl unmask systemd-networkd.service
 	systemctl enable systemd-networkd.service
+
+	systemctl unmask iscsi-name-init.service
 	systemctl enable iscsi-name-init.service
 
 	systemctl unmask delphix-platform.service
