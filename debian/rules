@@ -59,9 +59,11 @@ DEPENDS += ansible, \
 	   debootstrap, \
 	   debsums, \
 	   dmidecode, \
+	   gdisk, \
 	   init, \
 	   iproute2, \
 	   iputils-ping, \
+	   jq, \
 	   kbd, \
 	   kmod, \
 	   less, \
@@ -86,7 +88,8 @@ DEPENDS += ansible, \
 	   sudo, \
 	   systemd-container, \
 	   tzdata, \
-	   udev,
+	   udev, \
+	   util-linux,
 
 #
 # The CRA PAM module provides an authentication method for the delphix user.
