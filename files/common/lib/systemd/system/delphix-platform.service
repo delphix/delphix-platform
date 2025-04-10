@@ -24,10 +24,6 @@ Before=rsync.service docker.service
 Type=oneshot
 ExecStart=/var/lib/delphix-platform/ansible/apply
 ExecStart=/var/lib/delphix-platform/dynamic-debug
-
-# Create /export/home symlink to /home if it doesn't already exist
-ExecStartPost=/bin/sh -c '[ -L /export/home ] || ln -s /home /export/home'
-
 RemainAfterExit=yes
 
 #
