@@ -17,13 +17,13 @@
 
 case $1 in
 upgrade)
-	#	Home directories were previously mounted under /export/home,
-	#	and this was changed to /home. This is the upgrade logic that
-	#	updates the /etc/fstab file to reflect that change.
-	#	Home directories will be mounted in both /export/home and /home
-	#	until the system is rebooted to ensure that running processes
-	#	referencing the old /export/home paths continue to function
-	#	while also enabling new logins under /home to work.
+	# Home directories were previously mounted under /export/home,
+	# and this was changed to /home. This is the upgrade logic that
+	# updates the /etc/fstab file to reflect that change.
+	# Home directories will be mounted in both /export/home and /home
+	# until the system is rebooted to ensure that running processes
+	# referencing the old /export/home paths continue to function
+	# while also enabling new logins under /home to work.
 	fs_tab=/etc/fstab
 	auto_master=/etc/auto.master
 
