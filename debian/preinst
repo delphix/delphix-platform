@@ -25,18 +25,10 @@ upgrade)
 	# referencing the old /export/home paths continue to function
 	# while also enabling new logins under /home to work.
 	fs_tab=/etc/fstab
-	auto_master=/etc/auto.master
 
 	if grep -q "\/export\/home" "$fs_tab"; then
 		sed -i 's|/export/home|/home|g' "$fs_tab"
 		mount /home
-	fi
-
-	if [[ -e $auto_master ]]; then
-		if grep -q "\/home\s+auto_home\s+-nobrowse" "$auto_master"; then
-			sed -i 's|/home   auto_home    -nobrowse|#/home   auto_home    -nobrowse|g' "$auto_master"
-			systemctl restart autofs
-		fi
 	fi
 
 	passwd_file=/etc/passwd
