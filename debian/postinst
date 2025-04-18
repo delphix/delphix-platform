@@ -1,6 +1,6 @@
 #!/bin/bash -eux
 #
-# Copyright 2018, 2021 Delphix
+# Copyright 2018, 2025 Delphix
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -66,6 +66,7 @@ configure)
 	systemctl unmask delphix.target
 
 	systemctl enable delphix-platform.service
+	systemctl enable delphix-legacy-link.service
 	systemctl enable delphix-rpool-upgrade.service
 	systemctl enable delphix.target
 
