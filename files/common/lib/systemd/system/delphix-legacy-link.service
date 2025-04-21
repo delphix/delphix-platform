@@ -21,23 +21,25 @@ Requires=delphix-platform.service
 
 [Service]
 Type=oneshot
-ExecStart=/bin/sh -c '\
-  echo "Ensuring /export/home is a symlink to /home..."; \
-  if mountpoint -q /export/home; then \
-    echo "/export/home is a mountpoint, unmounting..."; \
-    umount /export/home || { echo "Failed to unmount /export/home"; exit 1; }; \
-  fi; \
-  if [ -e /export/home ] && [ ! -L /export/home ]; then \
-    echo "Removing existing /export/home directory..."; \
-    rm -rf /export/home; \
-  fi; \
-  if [ ! -d /export ]; then \
-    mkdir /export; \
-  fi; \
-  if [ -d /export ] && [ ! -L /export/home ]; then \
-    echo "Creating symlink: /export/home -> /home"; \
-    ln -s /home /export/home; \
-  fi;'
+ExecStart=/bin/bash -c " \
+  if [ ! -L /export/home ]; then \
+    echo 'Ensuring /export/home is a symlink to /home...'; \
+    if mountpoint -q /export/home; then \
+      echo '/export/home is a mountpoint, unmounting...'; \
+      umount /export/home || { echo 'Failed to unmount /export/home'; exit 1; }; \
+    fi; \
+    if [ -e /export/home ]; then \
+      echo 'Removing existing /export/home directory...'; \
+      rm -rf /export/home; \
+    fi; \
+    if [ ! -d /export ]; then \
+      mkdir /export; \
+    fi; \
+    if [ -d /export ]; then \
+      echo 'Creating symlink: /export/home -> /home'; \
+      ln -s /home /export/home; \
+    fi; \
+  fi"
 
 [Install]
 WantedBy=delphix.target
