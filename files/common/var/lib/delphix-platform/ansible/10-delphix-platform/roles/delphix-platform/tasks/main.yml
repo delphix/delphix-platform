@@ -232,56 +232,6 @@
     - 'delphix'
     - 'root'
 
-#
-# The 'ClientAliveInterval' setting determines the amount of time
-# (in seconds) the sshd server will wait to receive data from the
-# client before sending a request for response.
-#
-- set_fact:
-    ssh_client_alive_interval: "300"
-    ssh_client_alive_count_max: "3"
-
-#
-# With that said (see comment above), the Azure marketplace does not
-# allow a value greater than 3 minutes. So, when running on Azure, we
-# use 3 minutes.
-#
-- set_fact:
-    ssh_client_alive_interval: "180"
-    ssh_client_alive_count_max: "0"
-  when:
-    - platform == "azure"
-
-- lineinfile:
-    path: /etc/ssh/sshd_config
-    regexp: "^#?{{ item.key }} "
-    line: "{{ item.key }} {{ item.value }}"
-  with_items:
-    #
-    # Configure SSH to allow PAM "conversations" (interactions with the user).
-    #
-    - { key: "ChallengeResponseAuthentication", value: "yes" }
-    #
-    # Harden the appliance by disabling ssh-agent(1), tcp, UNIX domain, and
-    # X11 forwarding. Note that this doesn't improve security unless users are
-    # also denied shell access.
-    #
-    - { key: "AllowAgentForwarding", value: "no" }
-    - { key: "AllowStreamLocalForwarding", value: "no" }
-    - { key: "AllowTcpForwarding", value: "no" }
-    - { key: "Ciphers", value: "chacha20-poly1305@openssh.com,aes128-ctr,aes192-ctr,aes256-ctr,aes128-gcm@openssh.com,aes256-gcm@openssh.com" }
-    - { key: "ClientAliveCountMax", value: "{{ ssh_client_alive_count_max }}" }
-    - { key: "ClientAliveInterval", value: "{{ ssh_client_alive_interval }}" }
-    - { key: "HostKeyAlgorithms", value: "-ssh-rsa*" }
-    - { key: "KexAlgorithms", value: "curve25519-sha256,curve25519-sha256@libssh.org,ecdh-sha2-nistp256,ecdh-sha2-nistp384,ecdh-sha2-nistp521,diffie-hellman-group-exchange-sha256,diffie-hellman-group16-sha512,diffie-hellman-group18-sha512,diffie-hellman-group14-sha256"}
-    - { key: "LoginGraceTime", value: "60"}
-    - { key: "MACs", value: "umac-128-etm@openssh.com,hmac-sha2-256-etm@openssh.com,hmac-sha2-512-etm@openssh.com,umac-128@openssh.com,hmac-sha2-256,hmac-sha2-512"}
-    - { key: "MaxAuthTries", value: "4" }
-    - { key: "MaxStartups", value: "10:30:60"}
-    - { key: "PermitRootLogin", value: "no" }
-    - { key: "X11Forwarding", value: "no" }
-  notify: "sshd config changed"
-
 - blockinfile:
     path: /etc/profile
     insertafter: EOF
@@ -318,10 +268,6 @@
 # like last-login, "welcome to ubuntu", and help messages. This makes linux and
 # illumos look the same, too.
 #
-- replace:
-    dest: /etc/ssh/sshd_config
-    regexp: '^#?[\s]*PrintLastLog.*$'
-    replace: 'PrintLastLog no'
 - replace:
     dest: /etc/pam.d/sshd
     regexp: '^(session[\s]+optional[\s]+pam_motd\.so.*)$'
