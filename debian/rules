@@ -1,6 +1,6 @@
 #!/usr/bin/make -f
 #
-# Copyright 2018, 2024 Delphix
+# Copyright 2018, 2025 Delphix
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -41,6 +41,7 @@ DEPENDS = delphix-kernel-$(KERNEL_TYPE.$(TARGET_PLATFORM)),
 # that are leveraging ZFS as their root filesystem.
 #
 DEPENDS += grub-pc, \
+	   grub-efi-amd64-bin, \
 	   delphix-zfs,
 
 #
@@ -59,6 +60,9 @@ DEPENDS += ansible, \
 	   debootstrap, \
 	   debsums, \
 	   dmidecode, \
+	   dosfstools, \
+	   efibootmgr, \
+	   efitools, \
 	   init, \
 	   iproute2, \
 	   iputils-ping, \
@@ -72,8 +76,8 @@ DEPENDS += ansible, \
 	   net-tools, \
 	   netbase, \
 	   netplan.io, \
-	   ntp, \
-		 nullmailer, \
+	   ntpsec, \
+	   nullmailer, \
 	   open-iscsi, \
 	   openssh-server, \
 	   openssl, \
@@ -81,10 +85,13 @@ DEPENDS += ansible, \
 	   policykit-1, \
 	   procps, \
 	   python3, \
+	   python3-netifaces, \
 	   rng-tools, \
 	   rsyslog, \
 	   sudo, \
+	   systemd-boot, \
 	   systemd-container, \
+	   systemd-resolved, \
 	   tzdata, \
 	   udev,
 
@@ -111,38 +118,19 @@ DEPENDS += $(DEPENDS.$(TARGET_PLATFORM))
 DEPENDS += delphix-build-info,
 
 #
-# The usrmerge package modifies the layout of directories under root (/) upon
-# installation, to ensure that a Delphix Engine upgraded to Ubuntu 20.04 has
-# the same directory layout as a Delphix Engine that initially came on
-# Ubuntu 20.04 (or later).
-#
-DEPENDS += usrmerge,
-
-#
-# These packages help strengthen the security of the appliance by identifying
-# and preventing undesired behaviors.
-#
-DEPENDS += aide, \
-	   aide-common,
-
-#
 # These packages are tools that are intended for human convenience. The
 # product should not rely on them programmatically. They may be updated
 # or replaced without regard for backward compatibility.
 #
 DEPENDS += aptitude, \
-	   awscli, \
-	   bcc-tools, \
+	   bcc, \
 	   bpftrace, \
 	   crash-python, \
 	   delphix-rust, \
 	   dnsutils, \
 	   drgn, \
-	   dstat, \
-	   emacs-nox, \
 	   ethtool, \
 	   gdb, \
-	   gdb-python, \
 	   htop, \
 	   iftop, \
 	   inotify-tools, \
@@ -150,7 +138,6 @@ DEPENDS += aptitude, \
 	   jq, \
 	   kdump-tools, \
 	   ldap-utils, \
-	   libkdumpfile, \
 	   linux-tools-common, \
 	   lsof, \
 	   man-db, \
@@ -229,4 +216,3 @@ override_dh_auto_test:
 	# testing via another mechanism, so running it during package
 	# builds is unnecessary.
 	#
-
