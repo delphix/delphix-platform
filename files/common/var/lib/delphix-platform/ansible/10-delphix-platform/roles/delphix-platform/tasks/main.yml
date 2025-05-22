@@ -605,7 +605,7 @@
       # Set to true to disable the servicediscovery plugin.
       disabled=true
   when:
-    - platform == "vmware"
+    - platform == "esx"
   notify: "vmware-tools config changed"
 
 #
