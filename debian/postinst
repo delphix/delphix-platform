@@ -127,6 +127,10 @@ configure)
 		update-initramfs -u -t -k "$(uname -r)"
 	fi
 
+  if [[ -f "/var/lib/delphix-platform/export-home" ]]; then
+    chmod 755 "/var/lib/delphix-platform/export-home"
+  fi
+
 	;;
 esac
 
