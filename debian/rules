@@ -67,11 +67,13 @@ DEPENDS += ansible, \
 	   iproute2, \
 	   iputils-ping, \
 	   kbd, \
+	   kdump-tools, \
 	   kmod, \
 	   less, \
 	   locales, \
 	   logrotate, \
 	   lsb-release, \
+	   makedumpfile, \
 	   mount, \
 	   net-tools, \
 	   netbase, \
@@ -136,7 +138,6 @@ DEPENDS += aptitude, \
 	   inotify-tools, \
 	   iotop, \
 	   jq, \
-	   kdump-tools, \
 	   ldap-utils, \
 	   linux-tools-common, \
 	   lsof, \
