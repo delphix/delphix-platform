@@ -1,0 +1,14 @@
+[Unit]
+Description=Kernel crash dump capture service
+
+[Service]
+Type=oneshot
+StandardOutput=journal+console
+EnvironmentFile=/etc/default/kdump-tools
+ExecStartPre=-/usr/share/kdump-tools/kdump_mem_estimator
+ExecStart=/etc/init.d/kdump-tools start
+ExecStop=/etc/init.d/kdump-tools stop
+RemainAfterExit=yes
+
+[Install]
+WantedBy=basic.target
