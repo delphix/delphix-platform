@@ -8,17 +8,38 @@
 # to /home.
 #
 
-if ! mountpoint -q /export/home; then
-  if [ ! -L /export/home ]; then
-    echo 'Ensuring /export/home is a symlink to /home...'
-    if [ -e /export/home ]; then
-      echo 'Removing existing /export/home directory...'
-      rm -rf /export/home
-    fi
-    if [ ! -d /export ]; then
-      mkdir /export
-    fi
-    echo 'Creating symlink: /export/home -> /home'
-    ln -s /home /export/home
+# If /export/home is already a symlink to /home, do nothing
+if [ -L /export/home ]; then
+  echo '/export/home is already exists. Nothing to do.'
+  exit 0
+fi
+
+# If it's still a mount point, abort to avoid potential data loss
+if mountpoint -q /export/home; then
+  echo '/export/home is still mounted. Aborting to avoid risk of data loss.'
+  exit 1
+fi
+
+# If /export/home exists as a directory, check if it is safe to remove
+if [ -e /export/home ]; then
+  echo 'Found existing /export/home. Checking if it is safe to remove.'
+  if rmdir /export/home 2>/dev/null; then
+    echo '/export/home was empty and removed successfully.'
+  else
+    echo 'Error: /export/home is not empty. Aborting to avoid accidental deletion.'
+    exit 1
   fi
+fi
+
+# Ensure /export directory exists
+mkdir -p /export
+
+# Create symlink
+echo 'Creating symlink: /export/home -> /home'
+ln -s /home /export/home
+if [ $? -eq 0 ]; then
+  echo 'Symlink created successfully.'
+else
+  echo 'Failed to create symlink. Please check permissions and try again.'
+  exit 1
 fi
