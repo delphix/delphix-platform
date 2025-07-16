@@ -95,7 +95,8 @@ DEPENDS += ansible, \
 	   systemd-container, \
 	   systemd-resolved, \
 	   tzdata, \
-	   udev,
+	   udev, \
+	   zstd,
 
 #
 # The CRA PAM module provides an authentication method for the delphix user.
