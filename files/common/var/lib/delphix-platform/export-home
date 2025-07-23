@@ -23,6 +23,14 @@ fi
 # If /export/home exists as a directory, check if it is safe to remove
 if [ -e /export/home ]; then
   echo 'Found existing /export/home. Checking if it is safe to remove.'
+  if [ -d /export/home/delphix ]; then
+    if rmdir /export/home/delphix 2>/dev/null; then
+      echo '/export/home/delphix was empty and removed successfully.'
+    else
+      echo 'Error: /export/home/delphix is not empty. Aborting to avoid accidental deletion.'
+      exit 1
+    fi
+  fi
   if rmdir /export/home 2>/dev/null; then
     echo '/export/home was empty and removed successfully.'
   else
