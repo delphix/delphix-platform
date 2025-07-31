@@ -1,0 +1,18 @@
+#!/bin/bash -eux
+#
+# Copyright 2025 Delphix
+#
+
+case $1 in
+upgrade)
+  # Create the working directory for the dxrt utility if it doesn't exist
+  if [ ! -d "/var/delphix/sfdc/dxrt" ]; then
+    mkdir -p "/var/delphix/sfdc/dxrt" || die "failed to mkdir /var/delphix/sfdc/dxrt"
+    chmod o+r "/var/delphix/sfdc/dxrt" || die "Failed to add permissions to /var/delphix/sfdc/dxrt"
+    chown masking:staff "/var/delphix/sfdc" || die "Failed to chown /var/delphix/sfdc"
+    chown masking:staff "/var/delphix/sfdc/dxrt" || die "Failed to chown /var/delphix/sfdc/dxrt"
+  fi
+	;;
+esac
+
+exit 0
