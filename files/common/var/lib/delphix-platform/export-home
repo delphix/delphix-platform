@@ -8,6 +8,7 @@
 # to /home.
 #
 
+
 # If /export/home is already a symlink to /home, do nothing
 if [ -L /export/home ]; then
   echo '/export/home is already exists. Nothing to do.'
@@ -16,8 +17,27 @@ fi
 
 # If it's still a mount point, abort to avoid potential data loss
 if mountpoint -q /export/home; then
-  echo '/export/home is still mounted. Aborting to avoid risk of data loss.'
-  exit 1
+  echo '/export/home is still mounted. Check if /home is also mounted'
+  if mountpoint -q /home; then
+    echo '/home is also mounted.'
+    # Here /export/home and /home both are mounted.
+    # Check if no processes are using /export/home
+    # and if no processes are using /export/home,
+    # then attempt to unmount it.
+    if [ -z "$(lsof +f -- /export/home | grep "export/home")" ]; then
+      echo "No processes are using /export/home, attempting to unmount"
+      umount /export/home
+    fi
+  else
+    echo '/home is not mounted. Aborting to avoid risk of data loss.'
+    exit 1
+  fi
+
+  # Now check if /export/home is still mounted
+  if mountpoint -q /export/home; then
+    echo '/export/home is still mounted. Aborting to avoid risk of data loss.'
+    exit 1
+  fi
 fi
 
 # If /export/home exists as a directory, check if it is safe to remove
