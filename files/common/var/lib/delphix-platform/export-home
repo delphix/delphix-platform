@@ -8,35 +8,33 @@
 # to /home.
 #
 
+
 # If /export/home is already a symlink to /home, do nothing
 if [ -L /export/home ]; then
   echo '/export/home is already exists. Nothing to do.'
   exit 0
 fi
 
-# If it's still a mount point, abort to avoid potential data loss
+# if /export/home and /home both are mounted - Dont do anything
+# Since during the next boot /export/home will not be mounted
+# Since /export/home is there all tests will be passes
 if mountpoint -q /export/home; then
-  echo '/export/home is still mounted. Aborting to avoid risk of data loss.'
-  exit 1
-fi
-
-# If /export/home exists as a directory, check if it is safe to remove
-if [ -e /export/home ]; then
-  echo 'Found existing /export/home. Checking if it is safe to remove.'
-  if [ -d /export/home/delphix ]; then
-    if rmdir /export/home/delphix 2>/dev/null; then
-      echo '/export/home/delphix was empty and removed successfully.'
-    else
-      echo 'Error: /export/home/delphix is not empty. Aborting to avoid accidental deletion.'
-      exit 1
-    fi
-  fi
-  if rmdir /export/home 2>/dev/null; then
-    echo '/export/home was empty and removed successfully.'
+  echo '/export/home is still mounted. Check if /home is also mounted'
+  if mountpoint -q /home; then
+    echo '/home is also mounted. Since during the next boot /export/home will not be mounted, exiting safely.'
+    exit 0
   else
-    echo 'Error: /export/home is not empty. Aborting to avoid accidental deletion.'
+    echo '/home is not mounted. Aborting!!'
     exit 1
   fi
+fi
+
+# /export/home is not mounted, check if /home is mounted
+if mountpoint -q /home; then
+  echo '/home is mounted. Proceeding with the unmount check for /export/home.'
+else
+  echo '/home is not mounted. Aborting to avoid risk of data loss.'
+  exit 1
 fi
 
 # Ensure /export directory exists
