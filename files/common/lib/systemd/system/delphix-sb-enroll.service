@@ -1,0 +1,20 @@
+[Unit]
+Description=Enroll Secure Boot variables (PK/KEK/db) from .auth files
+Documentation=man:efi-updatevar(1)
+DefaultDependencies=no
+After=delphix-platform.service
+Wants=delphix-platform.service
+ConditionPathExists=/var/delphix/server/sb_keys/
+
+[Service]
+Type=oneshot
+Environment=SB_AUTH_DIR=/var/delphix/server/sb_keys/
+# Set to 1 if you want to restrict to AWS only
+Environment=SB_REQUIRE_AWS=1
+ExecStart=/var/lib/delphix-sb-enroll/sb_enroll_efivars.sh
+# Prevent accidental re-runs the same boot unless you change the inputs
+RemainAfterExit=no
+
+[Install]
+WantedBy=multi-user.target
+
