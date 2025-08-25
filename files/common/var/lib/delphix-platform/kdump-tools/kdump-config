@@ -1005,9 +1005,9 @@ kdump_save_core()
 
 	ERROR=0
 	if have_makedumpfile; then
-		log_action_msg "running makedumpfile $MAKEDUMP_ARGS $vmcore_file | compress > $KDUMP_CORETEMP"
+		log_action_msg "running makedumpfile $MAKEDUMP_ARGS $vmcore_file > $KDUMP_CORETEMP"
 		# shellcheck disable=SC2086
-		makedumpfile $MAKEDUMP_ARGS $vmcore_file | compress > "$KDUMP_CORETEMP"
+		makedumpfile $MAKEDUMP_ARGS $vmcore_file > "$KDUMP_CORETEMP"
 		ERROR=$?
 		if [ $ERROR -ne 0 ] ; then
 			log_failure_msg "$NAME: makedumpfile failed, falling back to 'cp'"
@@ -1117,7 +1117,7 @@ kdump_save_core_to_ftp()
 	if have_makedumpfile; then
 		log_action_msg "sending makedumpfile $MAKEDUMP_ARGS $vmcore_file via FTP to $FTP_REMOTE_HOST:$FTP_COREFILE"
 		# shellcheck disable=SC2086
-		makedumpfile $MAKEDUMP_ARGS $vmcore_file | compress | busybox ftpput $FTPPUT_ARGS "$FTP_REMOTE_HOST" "$FTP_COREFILE" -
+		makedumpfile $MAKEDUMP_ARGS $vmcore_file | busybox ftpput $FTPPUT_ARGS "$FTP_REMOTE_HOST" "$FTP_COREFILE" -
 		ERROR=$?
 		if [ $ERROR -ne 0 ]; then
 			log_failure_msg "$NAME: makedumpfile failed, retrying with full vmcore"
@@ -1127,7 +1127,7 @@ kdump_save_core_to_ftp()
 	if ! have_makedumpfile || [ "$ERROR" -ne 0 ]; then
 		log_action_msg "sending $vmcore_file via FTP to $FTP_REMOTE_HOST:$FTP_COREFILE"
 		# shellcheck disable=SC2086
-		cat $vmcore_file | compress | busybox ftpput $FTPPUT_ARGS "$FTP_REMOTE_HOST" "$FTP_COREFILE" -
+		cat $vmcore_file | busybox ftpput $FTPPUT_ARGS "$FTP_REMOTE_HOST" "$FTP_COREFILE" -
 		ERROR=$?
 	fi
 
@@ -1205,7 +1205,7 @@ kdump_save_core_to_ssh()
 	if have_makedumpfile; then
 		log_action_msg "sending makedumpfile $MAKEDUMP_ARGS $vmcore_file to $SSH_REMOTE_HOST : $SSH_CORETEMP"
 		# shellcheck disable=SC2086
-		makedumpfile $MAKEDUMP_ARGS $vmcore_file | compress | ssh -i $SSH_KEY "$SSH_REMOTE_HOST" dd "of=$SSH_CORETEMP"
+		makedumpfile $MAKEDUMP_ARGS $vmcore_file | ssh -i $SSH_KEY "$SSH_REMOTE_HOST" dd "of=$SSH_CORETEMP"
 		ERROR=$?
 		if [ $ERROR -ne 0 ] ; then
 			log_failure_msg "$NAME: makedumpfile failed, falling back to 'scp'"
