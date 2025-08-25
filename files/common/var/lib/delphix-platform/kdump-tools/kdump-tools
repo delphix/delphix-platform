@@ -1,0 +1,66 @@
+#! /bin/sh
+
+### BEGIN INIT INFO
+# Provides:          kdump-tools
+# Required-Start:    $syslog $time $local_fs $remote_fs $network
+# Required-Stop:     $syslog
+# Default-Start:     2 3 4 5
+# Default-Stop:
+# Short-Description: kdump
+# Description:       init script to load a kdump kernel or save vmcores
+### END INIT INFO
+
+PATH=/bin:/usr/bin:/sbin:/usr/sbin
+NAME="kdump-tools"
+DESC="kdump-tools"
+export NAME
+
+. /lib/lsb/init-functions
+. /lib/init/vars.sh
+
+VMCORE_FILE=/proc/vmcore
+KDUMP_SCRIPT=/usr/sbin/kdump-config
+KDUMP_DEFAULTS=/etc/default/kdump-tools
+[ -r $KDUMP_DEFAULTS ] && . $KDUMP_DEFAULTS
+
+[ "$USE_KDUMP" -ne 0 ] || exit 0;
+
+case "$1" in
+  start)
+	#
+	# If we have a /proc/vmcore, then we just kdump'ed
+	#
+	if [ -e $VMCORE_FILE ] && [ -s $VMCORE_FILE ]; then
+		printf "Starting %s: " "$DESC"
+		if ! $KDUMP_SCRIPT savecore && [ -n "$KDUMP_FAIL_CMD" ] ; then
+			$KDUMP_FAIL_CMD ;
+		else
+			date -R ;
+			reboot -f ;
+		fi
+	#
+	# Else, we've just booted and need to load the kdump kernel
+	#
+	else
+		printf "Starting %s: " "$DESC"
+		$KDUMP_SCRIPT load
+	fi
+	;;
+  stop)
+	printf "Stopping %s: " "$DESC"
+	$KDUMP_SCRIPT unload
+	;;
+  status)
+	$KDUMP_SCRIPT status
+	;;
+  restart|force-reload)
+  	# alias the required 'force-reload' option
+	$KDUMP_SCRIPT unload
+	$KDUMP_SCRIPT load
+	;;
+  *)
+	echo "Usage: $0 {start|stop|status|restart|force-reload}"
+	exit 1
+esac
+
+exit 0
