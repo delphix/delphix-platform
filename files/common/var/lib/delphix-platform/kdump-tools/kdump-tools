@@ -19,7 +19,7 @@ export NAME
 . /lib/init/vars.sh
 
 VMCORE_FILE=/proc/vmcore
-KDUMP_SCRIPT=/usr/sbin/kdump-config
+KDUMP_SCRIPT=/var/lib/delphix-platform/kdump-tools/kdump-config
 KDUMP_DEFAULTS=/etc/default/kdump-tools
 [ -r $KDUMP_DEFAULTS ] && . $KDUMP_DEFAULTS
 

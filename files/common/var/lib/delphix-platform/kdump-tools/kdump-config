@@ -54,8 +54,6 @@ NFS_RETRANS=${NFS_RETRANS:=3}
 NFS_MOUNT_RETRY=${NFS_MOUNT_RETRY:=4}
 SSH_KDUMP_RETRY=${SSH_KDUMP_RETRY:=16}
 MAKEDUMP_ARGS=${MAKEDUMP_ARGS:="-F -c -d 31"}
-# Add '-F' [flatten] to MAKEDUMP_ARGS, if not there:
-[ "${MAKEDUMP_ARGS#-F*}" != "${MAKEDUMP_ARGS}" ] || MAKEDUMP_ARGS="${MAKEDUMP_ARGS} -F"
 
 KDUMP_CMDLINE_APPEND=${KDUMP_CMDLINE_APPEND:="reset_devices systemd.unit=kdump-tools-dump.service nr_cpus=1 irqpoll usbcore.nousb"}
 KDUMP_KERNEL_HOOK="/etc/kernel/postinst.d/kdump-tools"
