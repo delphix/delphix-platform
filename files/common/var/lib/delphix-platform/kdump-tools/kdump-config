@@ -1005,9 +1005,9 @@ kdump_save_core()
 
 	ERROR=0
 	if have_makedumpfile; then
-		log_action_msg "running makedumpfile $MAKEDUMP_ARGS $vmcore_file > $KDUMP_CORETEMP"
+		log_action_msg "running makedumpfile $MAKEDUMP_ARGS $vmcore_file $KDUMP_CORETEMP"
 		# shellcheck disable=SC2086
-		makedumpfile $MAKEDUMP_ARGS $vmcore_file > "$KDUMP_CORETEMP"
+		makedumpfile $MAKEDUMP_ARGS $vmcore_file "$KDUMP_CORETEMP"
 		ERROR=$?
 		if [ $ERROR -ne 0 ] ; then
 			log_failure_msg "$NAME: makedumpfile failed, falling back to 'cp'"
