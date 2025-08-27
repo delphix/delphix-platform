@@ -127,6 +127,7 @@ DEPENDS += delphix-build-info,
 #
 DEPENDS += aptitude, \
 	   bcc, \
+	   bpfcc-tools, \
 	   bpftrace, \
 	   crash-python, \
 	   delphix-rust, \
