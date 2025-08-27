@@ -1,0 +1,18 @@
+[Unit]
+Description=Enroll Secure Boot variables (PK/KEK/db) from .auth files
+Documentation=man:efi-updatevar(1)
+DefaultDependencies=no
+Before=delphix-platform.service
+After=var-delphix.mount local-fs.target
+ConditionPathExists=/var/delphix/server/sb_certs/
+
+[Service]
+Type=oneshot
+Environment=SB_AUTH_DIR=/var/delphix/server/sb_certs/
+ExecStart=/var/lib/delphix-sb-enroll/sb-enroll-efivars.sh
+# Prevent accidental re-runs the same boot unless you change the inputs
+RemainAfterExit=no
+
+[Install]
+WantedBy=delphix-platform.service
+
