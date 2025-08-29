@@ -515,7 +515,9 @@
 # MAKEDUMP_ARGS - Configure makedumpfile to:
 #       [1] Compress the dump (-c)
 #       [2] Filter out pages that are zero, in the page or private cache,
-#           part of user data, or marked as freed (-d 31)
+#           or marked as freed (-d 23)
+#           Note that we do not exclude the "user data" pages, as these
+#           are needed for drgn to be able to load zfs module symbols
 #       [3] Output a progress indicator, common and error messages, and
 #           a report summary message (--message-level 23)
 #       [4] Exclude ZFS ARC file data pages
@@ -558,7 +560,7 @@
     line: "{{ item.line }}"
   with_items:
     - regex: '^#?MAKEDUMP_ARGS='
-      line: 'MAKEDUMP_ARGS="-c -d 31 --message-level 23 --private-page-filter 0x2F5ABDF11ECAC4E"'
+      line: 'MAKEDUMP_ARGS="-c -d 23 --message-level 23 --private-page-filter 0x2F5ABDF11ECAC4E"'
     - regex: '^#?KDUMP_CMDLINE_APPEND='
       line: 'KDUMP_CMDLINE_APPEND="reset_devices systemd.unit=kdump-tools-dump.service nr_cpus=1 irqpoll nousb ata_piix.prefer_ms_hyperv=0 panic=10"'
 
