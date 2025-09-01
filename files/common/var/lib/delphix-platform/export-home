@@ -1,0 +1,51 @@
+#!/bin/bash
+#
+# Copyright (c) 2025 by Delphix. All rights reserved.
+#
+
+#
+# This script ensures that the /export/home is a symlink
+# to /home.
+#
+
+
+# If /export/home is already a symlink to /home, do nothing
+if [ -L /export/home ]; then
+  echo '/export/home is already exists. Nothing to do.'
+  exit 0
+fi
+
+# if /export/home and /home both are mounted - Dont do anything
+# Since during the next boot /export/home will not be mounted
+# Since /export/home is there all tests will be passes
+if mountpoint -q /export/home; then
+  echo '/export/home is still mounted. Check if /home is also mounted'
+  if mountpoint -q /home; then
+    echo '/home is also mounted. Since during the next boot /export/home will not be mounted, exiting safely.'
+    exit 0
+  else
+    echo '/home is not mounted. Aborting!!'
+    exit 1
+  fi
+fi
+
+# /export/home is not mounted, check if /home is mounted
+if mountpoint -q /home; then
+  echo '/home is mounted. Proceeding with the unmount check for /export/home.'
+else
+  echo '/home is not mounted. Aborting to avoid risk of data loss.'
+  exit 1
+fi
+
+# Ensure /export directory exists
+mkdir -p /export
+
+# Create symlink
+echo 'Creating symlink: /export/home -> /home'
+ln -s /home /export/home
+if [ $? -eq 0 ]; then
+  echo 'Symlink created successfully.'
+else
+  echo 'Failed to create symlink. Please check permissions and try again.'
+  exit 1
+fi
