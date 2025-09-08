@@ -9,10 +9,6 @@ die() {
 	exit 1
 }
 
-# Do nothing if Secure Boot is already enabled.
-sb=$(od -An -t u1 /sys/firmware/efi/efivars/SecureBoot-* | awk '{print $NF}')
-[[ $sb -eq 1 ]] && exit 0
-
 #
 # Run only on AWS.
 #
@@ -26,6 +22,10 @@ else
 fi
 
 [[ -d /sys/firmware/efi/efivars ]] || die "Not booted in UEFI mode (/sys/firmware/efi/efivars missing)."
+
+# Do nothing if Secure Boot is already enabled.
+sb=$(od -An -t u1 /sys/firmware/efi/efivars/SecureBoot-* | awk '{print $NF}')
+[[ $sb -eq 1 ]] && exit 0
 
 # Ensure efivars is mounted (usually is on Ubuntu)
 if ! mountpoint -q /sys/firmware/efi/efivars; then
