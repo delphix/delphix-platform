@@ -30,22 +30,34 @@ if mountpoint -q /export/home; then
 fi
 
 # /export/home is not mounted, check if /home is mounted
+# Check if /home is mounted
 if mountpoint -q /home; then
-  echo '/home is mounted. Proceeding with the unmount check for /export/home.'
+  echo "/home is mounted. Proceeding with /export/home cleanup."
+  # If /export/home exists
+  if [ -d /export/home ]; then
+    echo "/export/home exists. Attempting to remove it..."
+    rmdir /export/home 2>/dev/null
+    if [ $? -eq 0 ]; then
+      echo "/export/home directory removed successfully."
+    else
+      echo "/export/home is not empty. Please clean it manually before running this script."
+      exit 1
+    fi
+  fi
 else
-  echo '/home is not mounted. Aborting to avoid risk of data loss.'
+  echo "/home is not mounted. Aborting to avoid risk of data loss."
   exit 1
 fi
 
-# Ensure /export directory exists
+# Ensure /export exists
 mkdir -p /export
 
 # Create symlink
-echo 'Creating symlink: /export/home -> /home'
+echo "Creating symlink: /export/home -> /home"
 ln -s /home /export/home
 if [ $? -eq 0 ]; then
-  echo 'Symlink created successfully.'
+  echo "Symlink created successfully."
 else
-  echo 'Failed to create symlink. Please check permissions and try again.'
+  echo "Failed to create symlink. Please check permissions and try again."
   exit 1
 fi
