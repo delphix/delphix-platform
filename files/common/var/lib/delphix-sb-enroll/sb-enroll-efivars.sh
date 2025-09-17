@@ -14,10 +14,11 @@ die() {
 #
 # Expand this logic to support additional clouds.
 #
-if [[ $(get-appliance-platform) = "aws" ]]; then
-	log "AWS detected"
+cloud_platform=$(get-appliance-platform)
+if [[ "$cloud_platform" = "aws" || "$cloud_platform" = "gcp" ]]; then
+	log "Supported platform detected"
 else
-	log "Not AWS; skipping Secure Boot enrollment."
+	log "Not AWS or GCP; skipping Secure Boot enrollment."
 	exit 0
 fi
 
