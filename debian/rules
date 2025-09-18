@@ -75,6 +75,7 @@ DEPENDS += ansible, \
 	   lsb-release, \
 	   makedumpfile, \
 	   mount, \
+	   multipath-tools, \
 	   net-tools, \
 	   netbase, \
 	   netplan.io, \
