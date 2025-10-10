@@ -48,7 +48,7 @@ if [[ $# -gt 2 ]]; then
 fi
 
 if [[ $# -eq 1 ]]; then
-	echo "$output" | tr -d '\n'
+	echo "$output" | tr -d '\n' | sed 's/$/-AES-256/'
 	shift
 fi
 
