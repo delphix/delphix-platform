@@ -22,9 +22,12 @@ the IP address, hostname, and services (description and status).
 import curses
 import curses.ascii
 import curses.textpad
+import re
 import sys
 import signal
 import os
+import shutil
+import tempfile
 import logging
 import subprocess
 from typing import List, Any, Tuple, Generator
@@ -102,11 +105,63 @@ def get_keyboard_layout() -> str:
 
 def set_keyboard_layout(layout: str) -> subprocess.CompletedProcess:
     """
-    Set the keyboard layout based on the user selection.
+    Set the keyboard layout by editing /etc/default/keyboard and applying it with setupcon.
+    This avoids localectl (which is disabled on Debian/Ubuntu builds).
+
+    Notes:
+      - Does NOT trigger update-initramfs; only applies to the running system's console.
     """
-    cmd: List[str] = ['localectl', 'set-x11-keymap', layout, 'pc105']
-    subprocess.run(cmd, shell=False, check=True)
-    return subprocess.run('setupcon', shell=False, check=True)
+    kb_path = "/etc/default/keyboard"
+    kb_backup = kb_path + ".bak"
+
+    # Read current content (if file doesn't exist, start with a minimal stub)
+    try:
+        with open(kb_path, "r", encoding="utf-8") as f:
+            lines = f.readlines()
+    except FileNotFoundError:
+        lines = [
+            'XKBMODEL="pc105"\n',
+            f'XKBLAYOUT="{layout}"\n',
+            'XKBVARIANT=""\n',
+            'XKBOPTIONS=""\n',
+            'BACKSPACE="guess"\n',
+        ]
+    else:
+        # Update or append XKBLAYOUT line
+        updated = False
+        pattern = re.compile(r'^\s*XKBLAYOUT\s*=')
+        for i, line in enumerate(lines):
+            if pattern.match(line):
+                lines[i] = f'XKBLAYOUT="{layout}"\n'
+                updated = True
+                break
+        if not updated:
+            # Append if not present
+            lines.append(f'XKBLAYOUT="{layout}"\n')
+
+    # Atomic write with backup
+    os.makedirs(os.path.dirname(kb_path), exist_ok=True)
+    if os.path.exists(kb_path):
+        shutil.copy2(kb_path, kb_backup)
+
+    fd, tmp = tempfile.mkstemp(prefix=".keyboard.", dir=os.path.dirname(kb_path))
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            f.writelines(lines)
+        os.replace(tmp, kb_path)
+    except Exception:
+        # Clean temp file and restore from backup if we wrote a partial file
+        try:
+            os.remove(tmp)
+        except OSError:
+            pass
+        if os.path.exists(kb_backup):
+            shutil.copy2(kb_backup, kb_path)
+        raise
+
+    # Apply to current console immediately (does not affect serial consoles)
+    # Use --force so it rebuilds/loads even if it thinks nothing changed.
+    return subprocess.run(["setupcon", "--force"], shell=False, check=True)
 
 
 def get_valid_keyboard_layouts() -> List[str]:
