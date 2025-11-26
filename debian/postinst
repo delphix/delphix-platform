@@ -46,7 +46,7 @@ configure)
 	systemctl disable motd-news.timer
 
 	# Disable multipathd service by default. It will be enabled if the iSCSI initiator feature is used
-  systemctl disable multipathd.service
+	systemctl disable multipathd.service
 
 	#
 	# Various tools generate mail on the system, e.g. cron, and we don't
