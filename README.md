@@ -4,6 +4,38 @@
 
 ### Building
 
+#### Prerequisites: SSH Key Setup
+
+Before cloning a build VM, ensure your SSH keys are loaded in ssh-agent so they
+are automatically installed on the VM for passwordless access:
+
+    $ ssh-add -l                    # Check if keys are loaded
+    $ ssh-add ~/.ssh/id_ed25519     # Load your key if not already loaded
+
+The `dc clone-latest` command will automatically install your public key from
+ssh-agent onto the VM. If no key is available, you'll see a warning and the
+VM won't be accessible via SSH key authentication.
+
+**Manual SSH Key Setup (if automatic setup fails):**
+
+If you cloned the VM before loading your keys, or the automatic setup didn't
+work, you can manually configure passwordless SSH. First, log in with standard
+password:
+
+    $ ssh delphix@$USER-bootstrap.dlpxdc.co
+
+Then add your public key to authorized_keys:
+
+    $ mkdir -p ~/.ssh && chmod 700 ~/.ssh
+    $ echo "YOUR_PUBLIC_KEY_HERE" >> ~/.ssh/authorized_keys
+    $ chmod 600 ~/.ssh/authorized_keys
+
+To get your public key, run this on your local machine:
+
+    $ cat ~/.ssh/id_ed25519.pub     # or id_rsa.pub
+
+#### Create Build VM
+
 Run this command on "dlpxdc.co" to create the VM used to do the build:
 
     $ dc clone-latest --size COMPUTE_LARGE dlpx-internal-buildserver-develop $USER-bootstrap
@@ -12,9 +44,26 @@ Log into that VM using the "delphix" user, and run these commands:
 
     $ git clone https://github.com/delphix/delphix-platform.git
     $ cd delphix-platform
-    $ sudo apt-get update && sudo apt-get install python3-docker
-    $ ansible-playbook bootstrap/playbook.yml
-    $ ./scripts/docker-run.sh make packages
+
+#### Bootstrap and Build
+
+    $ sudo apt-get update && sudo apt-get install -y docker.io python3-pip
+    $ sudo pip3 install docker --break-system-packages
+    $ sudo usermod -aG docker $USER
+    $ sudo docker build -t delphix-platform docker/
+    $ sg docker -c './scripts/docker-run.sh make packages'
+
+#### Build Specific Platforms
+
+To build for a specific platform instead of all platforms:
+
+    $ ./scripts/docker-run.sh make package-aws      # AWS only
+    $ ./scripts/docker-run.sh make package-azure    # Azure only
+    $ ./scripts/docker-run.sh make package-esx      # ESX only
+
+Available platforms: aws, azure, esx, gcp, hyperv, kvm, oci
+
+Build artifacts are placed in the `artifacts/` directory.
 
 ## Contributing
 
