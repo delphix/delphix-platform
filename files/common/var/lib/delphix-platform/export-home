@@ -30,7 +30,6 @@ if mountpoint -q /export/home; then
 fi
 
 # /export/home is not mounted, check if /home is mounted
-# Check if /home is mounted
 if mountpoint -q /home; then
   echo "/home is mounted. Proceeding with /export/home cleanup."
   # If /export/home exists
@@ -40,8 +39,16 @@ if mountpoint -q /home; then
     if [ $? -eq 0 ]; then
       echo "/export/home directory removed successfully."
     else
-      echo "/export/home is not empty. Please clean it manually before running this script."
-      exit 1
+      # If rmdir fails, it means /export/home is not empty
+      # Move contents to a backup location for a seamless user experience.
+      echo "/export/home is not empty. Moving contents to /export/home.backup before cleanup..."
+      backup_dir="/export/home.backup.$(date +%Y%m%d_%H%M%S)"
+      mv /export/home "$backup_dir"
+      if [ $? -ne 0 ]; then
+        echo "Failed to move /export/home contents to backup. Manual intervention required."
+        exit 1
+      fi
+      echo "Contents of /export/home moved successfully to: $backup_dir"
     fi
   fi
 else
