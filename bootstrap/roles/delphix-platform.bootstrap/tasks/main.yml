@@ -21,9 +21,19 @@
 - apt:
     name: "{{ item }}"
     state: present
-  with_items:
-    - docker.io
+  loop:
+    - nftables
+    - docker-ce
+    - docker-ce-cli
+    - containerd.io
     - python3-docker
+
+- name: Execute 'systemctl start docker' command
+  ansible.builtin.command: systemctl start docker
+  register: docker_start_result
+  retries: 10
+  delay: 30
+  until: docker_start_result.rc == 0
 
 - docker_image:
     build:
