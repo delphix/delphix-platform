@@ -22,7 +22,9 @@
     name: "{{ item }}"
     state: present
   with_items:
-    - docker.io
+    - docker-ce
+    - docker-ce-cli
+    - containerd.io
     - python3-docker
 
 - docker_image:
