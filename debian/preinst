@@ -24,17 +24,17 @@ upgrade)
 	# until the system is rebooted to ensure that running processes
 	# referencing the old /export/home paths continue to function
 	# while also enabling new logins under /home to work.
-	fs_tab=/etc/fstab
-
-	if grep -q "\/export\/home" "$fs_tab"; then
-		sed -i 's|/export/home|/home|g' "$fs_tab"
-		mount /home
-	fi
-
-	passwd_file=/etc/passwd
-	if grep -q "\/export\/home" "$passwd_file"; then
-		sed -i 's/\/export\/home/\/home/g' /etc/passwd
-	fi
+  fs_tab=/etc/fstab
+  #
+  #	if grep -q "\/export\/home" "$fs_tab"; then
+  #		sed -i 's|/export/home|/home|g' "$fs_tab"
+  #		mount /home
+  #	fi
+  #
+  #	passwd_file=/etc/passwd
+  #	if grep -q "\/export\/home" "$passwd_file"; then
+  #		sed -i 's/\/export\/home/\/home/g' /etc/passwd
+  #	fi
 
 	;;
 esac
