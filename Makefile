@@ -1,5 +1,5 @@
 #
-# Copyright 2018, 2020 Delphix
+# Copyright 2018, 2026 Delphix
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -26,13 +26,25 @@ VERSION := $(shell date '+%Y.%m.%d.%H')
 	check \
 	package
 
+build-deps:
+	#
+	# Create a fake debian/control file with a bogus platform for the
+	# purpose of installing build dependencies. The control files used for
+	# building will be generated in each platform "package-<platform>"
+	# target.
+	#
+	sed "s/@@TARGET_PLATFORM@@/fake/" debian/control.in >debian/control
+	DEBIAN_FRONTEND=noninteractive mk-build-deps --install \
+		--tool='apt-get -o Debug::pkgProblemResolver=yes --no-install-recommends --yes' \
+		debian/control
+
 packages: $(addprefix package-,$(ALL_PLATFORMS))
 
 package-%:
 	@rm -f debian/changelog
 
 	dch --create --package delphix-platform -v $(VERSION) \
-			"Automatically generated changelog entry."
+		"Automatically generated changelog entry."
 
 	sed "s/@@TARGET_PLATFORM@@/$*/" debian/control.in >debian/control
 

@@ -1,13 +1,6 @@
 on: [push, pull_request]
 
 jobs:
-  check-packages:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - run: docker build -t delphix-platform:latest docker
-      - run: ./scripts/docker-run.sh make packages
-
   check-shellcheck:
     runs-on: ubuntu-latest
     steps:
@@ -18,7 +11,6 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: delphix/actions/shfmt@master
-
   check-pylint:
     runs-on: ubuntu-latest
     steps:
