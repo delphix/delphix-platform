@@ -34,7 +34,7 @@ To get your public key, run this on your local machine:
 
     $ cat ~/.ssh/id_ed25519.pub     # or id_rsa.pub
 
-#### Create Build VM
+#### Create Build VM and Install Build Dependencies
 
 Run this command on "dlpxdc.co" to create the VM used to do the build:
 
@@ -44,22 +44,20 @@ Log into that VM using the "delphix" user, and run these commands:
 
     $ git clone https://github.com/delphix/delphix-platform.git
     $ cd delphix-platform
+    $ sudo apt-get update
+    $ sudo make build-deps
 
-#### Bootstrap and Build
+#### Build All Packages
 
-    $ sudo apt-get update && sudo apt-get install -y docker.io python3-pip
-    $ sudo pip3 install docker --break-system-packages
-    $ sudo usermod -aG docker $USER
-    $ sudo docker build -t delphix-platform docker/
-    $ sg docker -c './scripts/docker-run.sh make packages'
+    $ sudo make packages
 
 #### Build Specific Platforms
 
 To build for a specific platform instead of all platforms:
 
-    $ ./scripts/docker-run.sh make package-aws      # AWS only
-    $ ./scripts/docker-run.sh make package-azure    # Azure only
-    $ ./scripts/docker-run.sh make package-esx      # ESX only
+    $ sudo make package-aws      # AWS only
+    $ sudo make package-azure    # Azure only
+    $ sudo make package-esx      # ESX only
 
 Available platforms: aws, azure, esx, gcp, hyperv, kvm, oci
 
