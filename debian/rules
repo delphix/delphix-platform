@@ -79,7 +79,6 @@ DEPENDS += ansible, \
 	   net-tools, \
 	   netbase, \
 	   netplan.io, \
-	   ntpsec, \
 	   nullmailer, \
 	   open-iscsi, \
 	   openssh-server, \
@@ -95,6 +94,7 @@ DEPENDS += ansible, \
 	   systemd-boot, \
 	   systemd-container, \
 	   systemd-resolved, \
+	   systemd-timesyncd, \
 	   tzdata, \
 	   udev, \
 	   zstd,
