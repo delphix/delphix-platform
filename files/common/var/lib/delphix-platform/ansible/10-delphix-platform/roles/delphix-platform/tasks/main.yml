@@ -104,7 +104,7 @@
 # found in this directory, but also used by upgrade-scripts stored in
 # the appliace-build repository (which generates the upgrade image).
 # Thus, we need to be careful if/when changing this, as we'll need to
-# coordinate the change with the appliance-build upgrade-scripts.
+# coordinate the change with the appliance-build upgrade-scripts.aws
 #
 - file:
     path: /var/dlpx-update
@@ -653,6 +653,27 @@
     block: |
       # Set default umask value.
       umask 027
+
+#
+# Add nodev,nosuid to the /home fstab entry for security hardening (CIS).
+# New VMs have this handled during fresh provisioning; this covers upgrades
+# where the entry may lack these options.
+#
+- name: Check if /home fstab entry needs nodev,nosuid
+  shell: |
+    grep -qE '^[^#].*\s/home\s' /etc/fstab && \
+    (! grep -qE '^[^#].*\s/home\s.*nodev' /etc/fstab || \
+     ! grep -qE '^[^#].*\s/home\s.*nosuid' /etc/fstab)
+  register: home_fstab_needs_update
+  failed_when: false
+  changed_when: false
+
+- name: Add nodev,nosuid to /home fstab entry
+  replace:
+    path: /etc/fstab
+    regexp: '(^[^#].*\s/home\s.*)defaults'
+    replace: '\1defaults,nodev,nosuid'
+  when: home_fstab_needs_update.rc == 0
 
 - name: Mount /dev/shm with noexec,nosuid,nodev
   ansible.posix.mount:
