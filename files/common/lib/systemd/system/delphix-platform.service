@@ -1,5 +1,5 @@
 #
-# Copyright 2019 Delphix
+# Copyright 2019, 2026 Delphix
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ Before=rsync.service docker.service
 Type=oneshot
 ExecStart=/var/lib/delphix-platform/ansible/apply
 ExecStart=/var/lib/delphix-platform/dynamic-debug
+ExecStart=/var/lib/delphix-platform/export-home
 RemainAfterExit=yes
 
 #
