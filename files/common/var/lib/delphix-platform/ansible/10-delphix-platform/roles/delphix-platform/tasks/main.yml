@@ -1,5 +1,5 @@
 #
-# Copyright 2018, 2023 Delphix
+# Copyright 2018, 2026 Delphix
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@
 # it below; otherwise that task will fail.
 #
 - file:
-    path: /export/home
+    path: /home
     state: directory
     mode: 0755
 
@@ -35,7 +35,7 @@
     shell: /bin/bash
     create_home: yes
     comment: Delphix User
-    home: /export/home/delphix
+    home: /home/delphix
 
 #
 # In order for this locale to be used (e.g. by virtualization) we need
@@ -104,7 +104,7 @@
 # found in this directory, but also used by upgrade-scripts stored in
 # the appliace-build repository (which generates the upgrade image).
 # Thus, we need to be careful if/when changing this, as we'll need to
-# coordinate the change with the appliance-build upgrade-scripts.
+# coordinate the change with the appliance-build upgrade-scripts.aws
 #
 - file:
     path: /var/dlpx-update
@@ -637,7 +637,7 @@
 
 - name: Source bash completion
   blockinfile:
-    dest: "/export/home/delphix/.bashrc"
+    dest: "/home/delphix/.bashrc"
     block: |
       . /etc/bash_completion.d/systemctl
       . /etc/bash_completion.d/zfs
@@ -653,6 +653,27 @@
     block: |
       # Set default umask value.
       umask 027
+
+#
+# Add nodev,nosuid to the /home fstab entry for security hardening (CIS).
+# New VMs have this handled during fresh provisioning; this covers upgrades
+# where the entry may lack these options.
+#
+- name: Check if /home fstab entry needs nodev,nosuid
+  shell: |
+    grep -qE '^[^#].*\s/home\s' /etc/fstab && \
+    (! grep -qE '^[^#].*\s/home\s.*nodev' /etc/fstab || \
+     ! grep -qE '^[^#].*\s/home\s.*nosuid' /etc/fstab)
+  register: home_fstab_needs_update
+  failed_when: false
+  changed_when: false
+
+- name: Add nodev,nosuid to /home fstab entry
+  replace:
+    path: /etc/fstab
+    regexp: '(^[^#].*\s/home\s.*)defaults'
+    replace: '\1defaults,nodev,nosuid'
+  when: home_fstab_needs_update.rc == 0
 
 - name: Mount /dev/shm with noexec,nosuid,nodev
   ansible.posix.mount:
