@@ -79,7 +79,7 @@ DEPENDS += ansible, \
 	   net-tools, \
 	   netbase, \
 	   netplan.io, \
-	   ntpsec, \
+	   chrony, \
 	   nullmailer, \
 	   open-iscsi, \
 	   openssh-server, \
