@@ -127,10 +127,7 @@ configure)
 
 		# The udev rule in the rules file 80-net-setup-link.rules is applied when the initramfs image is loaded during the early
 		# boot process. The update-initramfs command builds a new initramfs image and includes our modified rule in the updated image.
-		# Use the installed kernel version rather than uname -r, since during image builds the running kernel on the build
-		# host differs from the kernel installed into the image chroot.
-		installed_kernel=$(ls /lib/modules/ | grep -- '-aws$' | sort -V | tail -1)
-		update-initramfs -u -t -k "$installed_kernel"
+		update-initramfs -u -t -k "$(uname -r)"
 	fi
 
 	;;
