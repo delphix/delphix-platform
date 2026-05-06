@@ -60,10 +60,9 @@ mkdir -p /export
 
 # Create symlink
 echo "Creating symlink: /export/home -> /home"
-ln -s /home /export/home
-if [ $? -eq 0 ]; then
+if ln -s /home /export/home; then
 	echo "Symlink created successfully."
 else
-	echo "Failed to create symlink. Please check permissions and try again."
+	echo "Failed to create symlink /export/home -> /home. Check that /export exists, is writable, and no stale /export/home entry remains. Re-run this script after resolving."
 	exit 1
 fi
