@@ -25,3 +25,5 @@ debian/tmp
 #IntelliJ IDEA adds the below files
 delphix-platform.iml
 .idea/
+
+.worktrees/
