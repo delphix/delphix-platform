@@ -504,6 +504,15 @@
     - variant is regex("external-.*")
 
 #
+# CIS hardening (DLPX-86530): account lockout on failed logins via pam_faillock
+# and password-reuse history via pam_pwhistory. The profile files dropped under
+# /usr/share/pam-configs/ are auto-enabled (Default: yes); this call composes
+# them into /etc/pam.d/common-{auth,account,password}. Runs after the CRA
+# enable above so both stacks compose consistently.
+#
+- command: /usr/sbin/pam-auth-update --package
+
+#
 # Increase login timeout to give support more time to interact with CRA via the console.
 #
 - lineinfile:
