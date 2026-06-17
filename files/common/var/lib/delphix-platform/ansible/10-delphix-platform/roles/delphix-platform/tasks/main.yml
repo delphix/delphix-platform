@@ -1,5 +1,5 @@
 #
-# Copyright 2018, 2023 Delphix
+# Copyright 2018, 2026 Delphix
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,17 +15,6 @@
 #
 
 ---
-#
-# We use a non-standard directory for the appliance user's home
-# directory. As a result, we have to explicitly create the "base
-# directory" here, rather than rely on Ansible's user module to create
-# it below; otherwise that task will fail.
-#
-- file:
-    path: /export/home
-    state: directory
-    mode: 0755
-
 - user:
     name: delphix
     uid: 65433
@@ -35,7 +24,7 @@
     shell: /bin/bash
     create_home: yes
     comment: Delphix User
-    home: /export/home/delphix
+    home: /home/delphix
 
 #
 # In order for this locale to be used (e.g. by virtualization) we need
@@ -637,7 +626,7 @@
 
 - name: Source bash completion
   blockinfile:
-    dest: "/export/home/delphix/.bashrc"
+    dest: "/home/delphix/.bashrc"
     block: |
       . /etc/bash_completion.d/systemctl
       . /etc/bash_completion.d/zfs
