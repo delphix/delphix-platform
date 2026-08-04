@@ -622,11 +622,6 @@
     path: "/etc/apt/sources.list.d/ubuntu-esm-infra.list"
     state: absent
 
-- include_tasks: buildserver.yml
-  when:
-    - variant == "internal-buildserver"
-    - not ansible_is_chroot
-
 - name: Add systemctl bash completion
   copy:
     dest: "/etc/bash_completion.d/systemctl"
@@ -686,3 +681,14 @@
     path: /etc/environment
     state: absent
     regexp: '^\s*PATH\s*='
+
+#
+# This is deliberately the last thing in this file. The buildserver
+# tasks configure swap, and that fails the playbook if no suitable
+# device can be found; we don't want such a failure to skip any of the
+# configuration above, as it did before TOOL-30723.
+#
+- include_tasks: buildserver.yml
+  when:
+    - variant == "internal-buildserver"
+    - not ansible_is_chroot

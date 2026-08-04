@@ -1,5 +1,5 @@
 #
-# Copyright 2022 Delphix
+# Copyright 2022, 2026 Delphix
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -39,16 +39,106 @@
 # We've hit build failures when swap space is not available, so we've
 # opted to automatically configure swap space here.
 #
-# This is a bit awkward, but we've hardcoded the device we're using for
-# swap here, based on the assumption that the Delphix buildserver will
-# only be used on AWS, and will have 3 "data" disks available like
-# normal internal Delphix DCenter systems.
+# We pick the device to use by property rather than by name. This task
+# used to hardcode /dev/nvme1n1, on the assumption that the buildserver
+# would only run on AWS and would have 3 "data" disks available like
+# normal internal Delphix DCenter systems. The disks are still there,
+# but AWS does not guarantee a stable mapping between EBS volumes and
+# NVMe device names across boots, so /dev/nvme1n1 is sometimes the root
+# pool disk, which leaves the buildserver with no swap at all; see
+# TOOL-30723.
 #
 # Additionally, we're not using a file on the root filesystem, as we
 # assume the root filesystem is on ZFS, and swap on ZFS can lead to
 # deadlocks; see: https://github.com/openzfs/zfs/issues/7734.
 #
 - shell: |
-    mkswap /dev/nvme1n1
-    swapon /dev/nvme1n1
+    set -o errexit
+    set -o pipefail
+
+    #
+    # A candidate must be a whole disk, in the size range we expect the
+    # DCenter "data" disks to be in, and must show no sign of being in use.
+    # If we can't find such a disk we fail rather than guess, since writing
+    # a swap header onto the wrong disk would be destructive.
+    #
+    swapdev=
+    declare -a rejected=()
+
+    while read -r name size type; do
+        [[ "$type" == "disk" ]] || continue
+
+        #
+        # Zvols are reported as disks, and an unused one has neither a
+        # signature nor holders, so none of the checks below would
+        # exclude it.
+        #
+        if [[ "$name" == zd* ]]; then
+            rejected+=("$name: zvol")
+            continue
+        fi
+
+        if ((size <= 2000000000 || size >= 10000000000)); then
+            rejected+=("$name: size $size outside expected data disk range")
+            continue
+        fi
+
+        #
+        # lsblk reports partitions and holders as dependents of the
+        # disk, so a lone line means the disk has neither. This is what
+        # excludes the root pool disk, which always carries partitions.
+        #
+        if [[ "$(lsblk -no NAME "/dev/$name" | wc -l)" -ne 1 ]]; then
+            rejected+=("$name: has partitions or holders")
+            continue
+        fi
+
+        if [[ -n "$(ls -A "/sys/block/$name/holders" 2>/dev/null)" ]]; then
+            rejected+=("$name: has holders")
+            continue
+        fi
+
+        #
+        # Anything carrying a signature is in use by something, with the
+        # exception of a swap signature that we wrote on an earlier run.
+        #
+        fstype=$(lsblk -dno FSTYPE "/dev/$name")
+        if [[ -n "$fstype" && "$fstype" != "swap" ]]; then
+            rejected+=("$name: has $fstype signature")
+            continue
+        fi
+
+        swapdev="/dev/$name"
+        break
+    done < <(lsblk -dnbo NAME,SIZE,TYPE | sort)
+
+    if [[ -z "$swapdev" ]]; then
+        echo "Failed to find a device to use for swap." >&2
+        if ((${#rejected[@]} > 0)); then
+            printf '  rejected %s\n' "${rejected[@]}" >&2
+        fi
+        lsblk -o NAME,SIZE,TYPE,FSTYPE,MOUNTPOINT >&2
+        exit 1
+    fi
+
+    mkswap "$swapdev"
+    swapon "$swapdev"
+
+    #
+    # "swapon" is not persistent, and this playbook only runs on the first
+    # boot (see the "ansible-done" handling in the "apply" script), so
+    # without an fstab entry every subsequent boot would come up with no
+    # swap at all. "nofail" keeps a clone that comes up without this disk
+    # from holding up the boot.
+    #
+    uuid=$(blkid -s UUID -o value "$swapdev")
+    if [[ -z "$uuid" ]]; then
+        echo "Failed to determine the UUID of $swapdev." >&2
+        exit 1
+    fi
+    if ! grep -q "^UUID=$uuid " /etc/fstab; then
+        echo "UUID=$uuid none swap sw,nofail 0 0" >>/etc/fstab
+    fi
+  args:
+    executable: /bin/bash
   when: show.stdout == ""
