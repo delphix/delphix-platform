@@ -130,7 +130,6 @@ DEPENDS += aptitude, \
 	   bcc, \
 	   bpfcc-tools, \
 	   bpftrace, \
-	   crash-python, \
 	   delphix-rust, \
 	   dnsutils, \
 	   drgn, \
