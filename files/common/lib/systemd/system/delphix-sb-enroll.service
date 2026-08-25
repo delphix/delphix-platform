@@ -6,6 +6,25 @@ Before=delphix-platform.service
 After=var-delphix.mount local-fs.target
 ConditionPathExists=/var/delphix/server/sb_certs/
 
+#
+# This unit ends by rebooting the appliance, so it must finish before
+# anything that would be left half-done by that reboot. Ordering it
+# before "cloud-init.service" (the network stage) holds back every
+# cloud-init module, since that stage runs "cloud_init_modules" and is
+# itself ordered before "cloud-config.target", which gates the
+# "cloud-config" and "cloud-final" stages.
+#
+# Without this, the reboot lands in the middle of the network stage
+# while it is generating the SSH host keys. Cloud-init writes each
+# module's "once-per-instance" semaphore before running the module, so
+# the interrupted module is skipped on every subsequent boot rather
+# than retried, and the appliance is left permanently missing
+# "/etc/ssh/ssh_host_rsa_key" (DLPX-95672). RSA is the one that loses
+# because it is generated first and takes ~100x longer than the ecdsa
+# and ed25519 keys that follow it.
+#
+Before=cloud-init.service
+
 [Service]
 Type=oneshot
 Environment=SB_AUTH_DIR=/var/delphix/server/sb_certs/
