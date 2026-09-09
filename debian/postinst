@@ -75,6 +75,10 @@ configure)
 	systemctl unmask delphix-sb-enroll.service
 	systemctl enable delphix-sb-enroll.service
 
+	systemctl unmask delphix-icmp-filter.service
+	systemctl enable delphix-icmp-filter.service
+	systemctl start delphix-icmp-filter.service
+
 	if ! id -u postgres >/dev/null; then
 		# When installing postgres, a postgres user is created unless it
 		# already exists. To have a consistent UID accross installations
