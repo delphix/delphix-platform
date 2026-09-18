@@ -1,0 +1,40 @@
+#
+# Copyright 2026 Delphix
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+#
+# This service applies iptables rules to block ICMP timestamp requests and
+# replies at boot, mitigating CVE-1999-0524. It is wanted by and ordered
+# before network-pre.target so the filter is in place before any network
+# interfaces are configured.
+#
+# The Linux kernel has no sysctl to suppress ICMP timestamp responses;
+# upstream netdev maintainers have rejected four separate kernel patches
+# (2015-2026) and consistently direct this fix to netfilter/iptables.
+#
+
+[Unit]
+Description=Delphix ICMP timestamp filter
+Before=network-pre.target
+ConditionVirtualization=!container
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/icmp_filter
+RemainAfterExit=yes
+TimeoutSec=30
+
+[Install]
+WantedBy=network-pre.target
