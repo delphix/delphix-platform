@@ -110,7 +110,7 @@
     extra_zfs_properties:
       mountpoint: /var/dlpx-update
       compression: gzip
-      quota: 30g
+      quota: "{{ '45g' if variant is search('dct') else '30g' }}"
   when: not ansible_is_chroot
 
 #
