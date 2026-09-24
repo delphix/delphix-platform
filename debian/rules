@@ -65,6 +65,7 @@ DEPENDS += ansible, \
 	   efitools, \
 	   init, \
 	   iproute2, \
+	   iptables, \
 	   iputils-ping, \
 	   kbd, \
 	   kdump-tools, \
