@@ -1,0 +1,55 @@
+#
+# Copyright 2026 Delphix
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+#
+# This service applies iptables rules to block ICMP timestamp requests and
+# replies at boot, mitigating CVE-1999-0524. It is wanted by and ordered
+# before network-pre.target so the filter is in place before any network
+# interfaces are configured.
+#
+# The Linux kernel has no sysctl to suppress ICMP timestamp responses;
+# upstream netdev maintainers have rejected four separate kernel patches
+# (2015-2026) and consistently direct this fix to netfilter/iptables.
+#
+# DefaultDependencies=no is required: any unit ordered Before=network-pre.target
+# otherwise implicitly gets After=sysinit.target, which forms an ordering cycle
+# with network-pre.target (sysinit.target depends on units that themselves come
+# after network-pre.target, e.g. cloud-init.service). systemd breaks such a cycle
+# by dropping one of the jobs arbitrarily, which was silently deleting
+# cloud-init.service's start job every boot and skipping first-boot network/SSH
+# setup entirely.
+#
+# DefaultDependencies=no also drops the implicit After=local-fs.target, so this
+# must be added back explicitly: without it, this unit could run before /usr is
+# mounted on a system with a separate /usr, and /usr/bin/iptables wouldn't exist
+# yet. Same pattern as delphix-sb-enroll.service.
+#
+
+[Unit]
+Description=Delphix ICMP timestamp filter
+DefaultDependencies=no
+After=local-fs.target
+Before=network-pre.target
+ConditionVirtualization=!container
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/icmp_filter
+RemainAfterExit=yes
+TimeoutSec=30
+
+[Install]
+WantedBy=network-pre.target
