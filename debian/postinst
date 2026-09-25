@@ -75,6 +75,19 @@ configure)
 	systemctl unmask delphix-sb-enroll.service
 	systemctl enable delphix-sb-enroll.service
 
+	systemctl unmask delphix-firewall.service
+	systemctl enable delphix-firewall.service
+	#
+	# postinst runs inside appliance-build's chroot during package build,
+	# where no systemd instance is running; "systemctl start" there fails
+	# and (with -e) aborts the whole postinst. Only start it when a real
+	# systemd is actually reachable (a real install/upgrade), same test
+	# debhelper's own deb-systemd-invoke uses for this.
+	#
+	if [ -d /run/systemd/system ]; then
+		systemctl start delphix-firewall.service
+	fi
+
 	if ! id -u postgres >/dev/null; then
 		# When installing postgres, a postgres user is created unless it
 		# already exists. To have a consistent UID accross installations
