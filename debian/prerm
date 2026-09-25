@@ -28,6 +28,13 @@ upgrade | remove)
 	systemctl disable delphix.target
 	systemctl disable delphix-platform.service
 	systemctl disable delphix-rpool-upgrade.service
+	#
+	# delphix-icmp-filter.service is RemainAfterExit=yes, so a plain
+	# disable leaves an already-run instance "active" and postinst's
+	# later "start" is a no-op on upgrade, silently skipping a rules
+	# update. --now stops it too, so postinst always re-runs it.
+	#
+	systemctl disable --now delphix-icmp-filter.service
 
 	#
 	# We also need to remove the "ansible-done" file, to ensure that
