@@ -15,6 +15,13 @@
 # limitations under the License.
 #
 
+#
+# The dh_installsystemd snippet goes first, rather than in its usual place
+# at the end, so the units this package ships are enabled before any of the
+# steps below that can fail. Each snippet checks "$1" itself.
+#
+#DEBHELPER#
+
 case $1 in
 configure)
 	systemctl disable apt-daily.service
@@ -55,25 +62,16 @@ configure)
 	#
 	systemctl disable nullmailer.service
 
+	#
+	# Only services this package does not ship are handled here. The units
+	# it does ship are enabled by the dh_installsystemd snippet at the
+	# top of this script; see debian/rules.
+	#
 	systemctl unmask auditd.service
 	systemctl enable auditd.service
 
 	systemctl unmask systemd-networkd.service
 	systemctl enable systemd-networkd.service
-
-	systemctl unmask iscsi-name-init.service
-	systemctl enable iscsi-name-init.service
-
-	systemctl unmask delphix-platform.service
-	systemctl unmask delphix-rpool-upgrade.service
-	systemctl unmask delphix.target
-
-	systemctl enable delphix-platform.service
-	systemctl enable delphix-rpool-upgrade.service
-	systemctl enable delphix.target
-
-	systemctl unmask delphix-sb-enroll.service
-	systemctl enable delphix-sb-enroll.service
 
 	if ! id -u postgres >/dev/null; then
 		# When installing postgres, a postgres user is created unless it

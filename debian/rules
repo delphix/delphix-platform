@@ -208,6 +208,41 @@ override_dh_install:
 override_dh_gencontrol:
 	dh_gencontrol -- -Vdelphix:Depends="$(DEPENDS)"
 
+#
+# systemd handling is enable bookkeeping only. The units this package ships
+# are enabled by dh_installsystemd in postinst, and disabled by it in postrm
+# on purge, which is where Debian policy puts it. Nothing may disable them on
+# upgrade: a prerm that does leaves the appliance with the delphix services
+# off for the whole unpack phase, and permanently if the upgrade is
+# interrupted before postinst re-enables them.
+#
+# --no-start and --no-stop-on-upgrade suppress every deb-systemd-invoke call,
+# so no maintainer script starts, stops or restarts a unit; runtime state stays
+# owned by the product's out-of-band "delphix.target" restart.
+#
+# deb-systemd-helper keys its state by unit name, not by package, and every
+# delphix-platform-<platform> package ships these same units. Purging one
+# platform's package after another has replaced it would therefore disable
+# the replacement's units. That can only happen by changing platforms, which
+# is not supported.
+#
+# Nothing enables systemd-reexec.service or its timer, despite their
+# WantedBy=delphix.target, so they take --no-enable.
+#
+DELPHIX_UNITS = delphix-platform.service \
+		delphix-rpool-upgrade.service \
+		delphix-sb-enroll.service \
+		delphix.target \
+		iscsi-name-init.service
+
+DISABLED_UNITS = systemd-reexec.service \
+		 systemd-reexec.timer
+
+override_dh_installsystemd:
+	dh_installsystemd --no-start --no-stop-on-upgrade $(DELPHIX_UNITS)
+	dh_installsystemd --no-enable --no-start --no-stop-on-upgrade \
+		$(DISABLED_UNITS)
+
 override_dh_auto_build:
 	#
 	# Don't run default make target during the build step; there
