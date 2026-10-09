@@ -28,6 +28,24 @@ upgrade | remove)
 	systemctl disable delphix.target
 	systemctl disable delphix-platform.service
 	systemctl disable delphix-rpool-upgrade.service
+	#
+	# delphix-firewall.service is RemainAfterExit=yes, so a plain
+	# disable leaves an already-run instance "active" and postinst's
+	# later "start" is a no-op on upgrade, silently skipping a rules
+	# update. --now stops it too (running its ExecStop, which removes
+	# the nftables table ExecStart created), so postinst always re-runs
+	# it against a clean slate. Guarded on the unit actually being known
+	# to systemd: upgrading from any package version that predates this
+	# unit's introduction has nothing to disable yet, and "disable" on
+	# an unknown unit fails and (with -e) aborts the whole upgrade. Also
+	# gated on a systemd manager actually running (same test postinst
+	# uses): in the appliance-build chroot the unit file can already be
+	# present from an earlier build step while no manager is reachable,
+	# and "--now" talks to the manager to stop the service.
+	#
+	if [ -d /run/systemd/system ] && systemctl list-unit-files --no-legend delphix-firewall.service | grep -q .; then
+		systemctl disable --now delphix-firewall.service
+	fi
 
 	#
 	# We also need to remove the "ansible-done" file, to ensure that

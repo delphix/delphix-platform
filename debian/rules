@@ -79,6 +79,7 @@ DEPENDS += ansible, \
 	   net-tools, \
 	   netbase, \
 	   netplan.io, \
+	   nftables, \
 	   chrony, \
 	   nullmailer, \
 	   open-iscsi, \
