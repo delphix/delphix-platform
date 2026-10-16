@@ -15,6 +15,13 @@
 # limitations under the License.
 #
 
+#
+# The dh_installsystemd snippet goes first, rather than in its usual place
+# at the end, so the units this package ships are enabled before any of the
+# steps below that can fail. Each snippet checks "$1" itself.
+#
+#DEBHELPER#
+
 case $1 in
 configure)
 	systemctl disable apt-daily.service
@@ -55,37 +62,40 @@ configure)
 	#
 	systemctl disable nullmailer.service
 
+	#
+	# Only services this package does not ship are handled here. The units
+	# it does ship are enabled by the dh_installsystemd snippet at the
+	# top of this script; see debian/rules.
+	#
 	systemctl unmask auditd.service
 	systemctl enable auditd.service
 
 	systemctl unmask systemd-networkd.service
 	systemctl enable systemd-networkd.service
 
-	systemctl unmask iscsi-name-init.service
-	systemctl enable iscsi-name-init.service
-
-	systemctl unmask delphix-platform.service
-	systemctl unmask delphix-rpool-upgrade.service
-	systemctl unmask delphix.target
-
-	systemctl enable delphix-platform.service
-	systemctl enable delphix-rpool-upgrade.service
-	systemctl enable delphix.target
-
-	systemctl unmask delphix-sb-enroll.service
-	systemctl enable delphix-sb-enroll.service
-
-	systemctl unmask delphix-firewall.service
-	systemctl enable delphix-firewall.service
 	#
-	# postinst runs inside appliance-build's chroot during package build,
-	# where no systemd instance is running; "systemctl start" there fails
-	# and (with -e) aborts the whole postinst. Only start it when a real
-	# systemd is actually reachable (a real install/upgrade), same test
-	# debhelper's own deb-systemd-invoke uses for this.
+	# delphix-firewall.service is enabled by the dh_installsystemd snippet
+	# at the top of this script, like every other unit this package ships,
+	# and it is the only one that needs a runtime action here. It is
+	# RemainAfterExit=yes, so on an upgrade it is already active and a
+	# "start" is a no-op, which would leave the ruleset the previous
+	# version installed in the kernel. A restart re-runs ExecStart, so the
+	# rules in /etc/nftables.d/delphix.nft take effect at configure.
+	#
+	# The reload is this script's own: "deb-systemd-helper enable" only
+	# writes symlinks, so nothing before this point tells the manager to
+	# re-read a unit file the upgrade replaced, and the restart would
+	# otherwise act on the previous version's definition.
+	#
+	# Both are guarded on a systemd manager actually running: postinst also
+	# runs inside appliance-build's chroot during package build, where no
+	# systemd instance is reachable, the calls fail and (with -e) abort the
+	# whole postinst. Same test debhelper's own deb-systemd-invoke uses for
+	# this.
 	#
 	if [ -d /run/systemd/system ]; then
-		systemctl start delphix-firewall.service
+		systemctl daemon-reload
+		systemctl restart delphix-firewall.service
 	fi
 
 	if ! id -u postgres >/dev/null; then

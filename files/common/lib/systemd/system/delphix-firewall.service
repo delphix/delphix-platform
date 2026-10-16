@@ -40,9 +40,8 @@
 #
 # ExecStop deletes the table this unit's own ExecStart created, so
 # RemainAfterExit=yes's "active" state actually corresponds to the rules
-# being in effect: without it, stopping this unit (e.g. prerm's
-# "disable --now" on removal/upgrade) would leave the table's rules live
-# in the kernel with nothing to reverse them.
+# being in effect: without it, stopping or restarting this unit would
+# leave the table's rules live in the kernel with nothing to reverse them.
 #
 
 [Unit]
