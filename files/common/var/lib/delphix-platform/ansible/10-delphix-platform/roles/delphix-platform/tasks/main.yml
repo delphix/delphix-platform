@@ -203,7 +203,7 @@
 # Close port 2049 by default on every appliance variant except the ones
 # listed below (internal engineering/test/infra images, left untouched).
 # A "delphix engine" variant (internal-dev, internal-qa, external-standard)
-# re-enables this at setup time if VIRTUALIZATION is chosen -- see
+# re-enables this at setup time if VIRTUALIZATION or BOTH is chosen -- see
 # ProductServiceImpl#setEngineType(). DCT/Hyperscale/UCF variants never
 # re-enable it; it is a permanent fact about those variants.
 #
