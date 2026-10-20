@@ -1,3 +1,4 @@
+# See docs/testing.md if you add, remove, or rename a job here.
 on: [push, pull_request]
 
 jobs:
@@ -33,3 +34,27 @@ jobs:
       - uses: actions/setup-python@v5
       - run: python3 -m pip install mypy
       - run: mypy --ignore-missing-imports files/common/usr/bin/delphix-startup-screen
+  check-docs-coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      # Assumes `jobs:` is this file's last top-level key, as it is today — a top-level key
+      # added after it would silently stop this extraction partway through.
+      - run: |
+          missing=0
+          jobs=$(awk '/^jobs:/{f=1; next} f && /^[A-Za-z]/{f=0} f' .github/workflows/main.yml \
+            | grep -oP '^  ["'"'"']?\K[a-zA-Z0-9_-]+(?=["'"'"']?:)' || true)
+          if [ -z "$jobs" ]; then
+            echo "could not extract any job names from .github/workflows/main.yml — check this script's own assumptions about the file's layout" >&2
+            exit 1
+          fi
+          for job in $jobs; do
+            if [ "$job" = "check-docs-coverage" ]; then
+              continue
+            fi
+            if ! grep -qF -- "\`$job\`" docs/testing.md; then
+              echo "job '$job' (.github/workflows/main.yml) has no backtick-quoted reference (e.g. \`$job\`) in docs/testing.md — update the doc" >&2
+              missing=1
+            fi
+          done
+          exit "$missing"

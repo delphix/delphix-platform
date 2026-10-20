@@ -14,6 +14,7 @@
 # limitations under the License.
 #
 
+# See docs/testing.md if you add, remove, or rename a platform here.
 ALL_PLATFORMS := aws azure esx gcp hyperv kvm oci
 
 #
