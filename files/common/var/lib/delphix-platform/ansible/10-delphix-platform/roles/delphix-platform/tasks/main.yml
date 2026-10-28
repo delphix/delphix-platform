@@ -200,28 +200,16 @@
 - command: systemctl mask nfs-blkmap.service
 
 #
-# Close port 2049 by default on every appliance variant except the ones
-# listed below (internal engineering/test/infra images, left untouched).
-# A "delphix engine" variant (internal-dev, internal-qa, external-standard)
-# re-enables this at setup time if VIRTUALIZATION or BOTH is chosen -- see
-# ProductServiceImpl#setEngineType(). DCT/Hyperscale/UCF variants never
-# re-enable it; it is a permanent fact about those variants.
-#
-# ansible_is_chroot restricts this to image-build time ONLY. Without it,
-# this task re-runs on every real engine's first boot after every upgrade
-# of the delphix-platform package (debian/prerm deletes ansible-done on
-# every upgrade), which would recreate /etc/nfs_disable on a live
-# VIRTUALIZATION/BOTH engine and silently undo NfsServerAccess.enable().
-# Existing engines are retrofitted by UpgradeManagerImpl#postUpgradeCleanup
-# instead -- keep the leave-alone list below in sync with that Java logic.
+# nfs-server.service only starts while /etc/nfs_server_enabled exists (see
+# nfs-server.service.d/override.conf), so NFS is off by default. Engine
+# variants create the file at engine setup. internal-dcenter has no such
+# setup, so it creates the file here. This is not limited to the image build
+# chroot, so that an upgraded dcenter host also gets the file on first boot.
 #
 - file:
-    path: /etc/nfs_disable
+    path: /etc/nfs_server_enabled
     state: touch
-  when:
-    - ansible_is_chroot
-    - variant not in ['internal-minimal', 'internal-unittest', 'internal-dcenter',
-                       'internal-buildserver', 'internal-package-mirror', 'internal-claude']
+  when: variant == 'internal-dcenter'
 
 #
 # By default, the ulimit for core files is set to 0, and the default
