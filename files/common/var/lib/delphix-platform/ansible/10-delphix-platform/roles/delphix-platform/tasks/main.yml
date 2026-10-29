@@ -200,6 +200,18 @@
 - command: systemctl mask nfs-blkmap.service
 
 #
+# nfs-server.service only starts while /etc/nfs_server_enabled exists (see
+# nfs-server.service.d/override.conf), so NFS is off by default. Engine
+# variants create the file at engine setup. internal-dcenter has no such
+# setup, so it creates the file here. This is not limited to the image build
+# chroot, so that an upgraded dcenter host also gets the file on first boot.
+#
+- file:
+    path: /etc/nfs_server_enabled
+    state: touch
+  when: variant == 'internal-dcenter'
+
+#
 # By default, the ulimit for core files is set to 0, and the default
 # filename and location for a core file is 'core' in the cwd. Update
 # limits.conf to allow processes running as root or a regular user to
