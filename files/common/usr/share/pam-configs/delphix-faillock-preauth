@@ -1,0 +1,13 @@
+Name: Delphix faillock account lockout (preauth)
+Default: yes
+Priority: 1024
+Auth-Type: Primary
+Auth:
+        required        pam_faillock.so preauth silent audit deny=5 unlock_time=900 onerr=fail
+Auth-Initial:
+        required        pam_faillock.so preauth silent audit deny=5 unlock_time=900 onerr=fail
+Account-Type: Primary
+Account:
+        required        pam_faillock.so
+Account-Initial:
+        required        pam_faillock.so
