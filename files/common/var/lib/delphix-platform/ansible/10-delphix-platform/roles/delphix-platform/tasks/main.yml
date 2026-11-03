@@ -706,13 +706,14 @@
   when: emsign_roots.changed
 
 #
-# Removing the emSign roots doesn't close every path to the exposed
-# keys. Sectigo cross-signed the same eight intermediates under "AAA
-# Certificate Services", which must stay trusted for legitimate Sectigo
-# chains, and the JVM doesn't check revocation. So we add the SHA-256
-# fingerprints of all sixteen certificates (the eight originals and the
-# eight cross-certificates) to every installed JDK's list of blocked
-# certificates, which the JVM rejects anywhere in a chain. JDK 8 names
+# Also block the exposed intermediates themselves, so the JVM rejects
+# them whichever root they chain to. Sectigo cross-signed the same
+# eight intermediates under "AAA Certificate Services". Older appliance
+# releases still trust that root, and a customer can add it or an
+# emSign root back through the CA certificate API. The JVM doesn't
+# check revocation, so we add the SHA-256 fingerprints of all sixteen
+# certificates (the eight originals and the eight cross-certificates)
+# to every installed JDK's list of blocked certificates. JDK 8 names
 # this file "blacklisted.certs"; later JDKs name it "blocked.certs".
 #
 - find:
