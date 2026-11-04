@@ -697,10 +697,17 @@
   register: emsign_roots
 
 #
-# --fresh rebuilds Java's cacerts from the current bundle, so it also
-# drops any roots that a ca-certificates upgrade removed from the bundle.
+# An update only adds and replaces entries in Java's cacerts; it never
+# removes a root that is no longer in the bundle. Deleting cacerts makes
+# ca-certificates-java rebuild it from the bundle, so it holds exactly the
+# roots that remain selected, plus the local certificates.
 #
-- command: update-ca-certificates --fresh
+- file:
+    path: /etc/ssl/certs/java/cacerts
+    state: absent
+  when: emsign_roots.changed
+
+- command: update-ca-certificates
   when: emsign_roots.changed
 
 #
