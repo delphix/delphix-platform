@@ -703,11 +703,8 @@
   register: emsign_roots
 
 #
-# Use --fresh so Java's cacerts is rebuilt from scratch. A plain run only
-# removes the roots deselected above, and leaves behind roots that a
-# ca-certificates upgrade dropped from the bundle itself. On an engine
-# upgraded from an older release, that leaves "AAA Certificate Services"
-# and "emSign ECC Root CA - G3" trusted by the JVM.
+# --fresh rebuilds Java's cacerts from the current bundle, so it also
+# drops any roots that a ca-certificates upgrade removed from the bundle.
 #
 - command: update-ca-certificates --fresh
   when: emsign_roots.changed
