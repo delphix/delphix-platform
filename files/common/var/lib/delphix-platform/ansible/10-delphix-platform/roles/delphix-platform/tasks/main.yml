@@ -702,7 +702,14 @@
     replace: '!\1'
   register: emsign_roots
 
-- command: update-ca-certificates
+#
+# Use --fresh so Java's cacerts is rebuilt from scratch. A plain run only
+# removes the roots deselected above, and leaves behind roots that a
+# ca-certificates upgrade dropped from the bundle itself. On an engine
+# upgraded from an older release, that leaves "AAA Certificate Services"
+# and "emSign ECC Root CA - G3" trusted by the JVM.
+#
+- command: update-ca-certificates --fresh
   when: emsign_roots.changed
 
 #
