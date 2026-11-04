@@ -684,17 +684,11 @@
     regexp: '^\s*PATH\s*='
 
 #
-# Distrust every eMudhra emSign root CA. Eight eMudhra intermediate CAs
-# had their private keys exposed by a key-generation defect, so anyone
-# can now issue certificates that chain to these roots. Ubuntu's
-# ca-certificates package only drops "emSign ECC Root CA - G3"; the
-# other emSign roots stay trusted unless we deselect them here.
-#
-# A "!" prefix in ca-certificates.conf deselects a certificate, and the
-# ca-certificates package keeps that choice across its own upgrades.
-# Java's cacerts is generated from this bundle and Python's certifi
-# reads it directly, so update-ca-certificates removes the roots from
-# all three at once.
+# Distrust every eMudhra emSign root CA. A "!" prefix in
+# ca-certificates.conf deselects a certificate, and the ca-certificates
+# package keeps that choice across its own upgrades. Java's cacerts is
+# generated from this bundle and Python's certifi reads it directly, so
+# update-ca-certificates removes the roots from all three.
 #
 - replace:
     path: /etc/ca-certificates.conf
