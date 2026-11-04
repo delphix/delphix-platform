@@ -707,8 +707,17 @@
     state: absent
   when: emsign_roots.changed
 
+#
+# During the image build Java can't run, so ca-certificates-java skips the
+# rebuild and the image has no cacerts. Rebuild it whenever it's missing,
+# which happens on the first boot.
+#
+- stat:
+    path: /etc/ssl/certs/java/cacerts
+  register: java_cacerts
+
 - command: update-ca-certificates
-  when: emsign_roots.changed
+  when: emsign_roots.changed or not java_cacerts.stat.exists
 
 #
 # This is deliberately the last thing in this file. The buildserver
