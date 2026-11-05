@@ -684,6 +684,42 @@
     regexp: '^\s*PATH\s*='
 
 #
+# Distrust every eMudhra emSign root CA. A "!" prefix in
+# ca-certificates.conf deselects a certificate, and the ca-certificates
+# package keeps that choice across its own upgrades. Java's cacerts is
+# generated from this bundle and Python's certifi reads it directly, so
+# update-ca-certificates removes the roots from all three.
+#
+- replace:
+    path: /etc/ca-certificates.conf
+    regexp: '^(mozilla/emSign_[^/]*\.crt)$'
+    replace: '!\1'
+  register: emsign_roots
+
+#
+# An update only adds and replaces entries in Java's cacerts; it never
+# removes a root that is no longer in the bundle. Deleting cacerts makes
+# ca-certificates-java rebuild it from the bundle, so it holds exactly the
+# roots that remain selected, plus the local certificates.
+#
+- file:
+    path: /etc/ssl/certs/java/cacerts
+    state: absent
+  when: emsign_roots.changed
+
+#
+# During the image build Java can't run, so ca-certificates-java skips the
+# rebuild and the image has no cacerts. Rebuild it whenever it's missing,
+# which happens on the first boot.
+#
+- stat:
+    path: /etc/ssl/certs/java/cacerts
+  register: java_cacerts
+
+- command: update-ca-certificates
+  when: emsign_roots.changed or not java_cacerts.stat.exists
+
+#
 # This is deliberately the last thing in this file. The buildserver
 # tasks configure swap, and that fails the playbook if no suitable
 # device can be found; we don't want such a failure to skip any of the
