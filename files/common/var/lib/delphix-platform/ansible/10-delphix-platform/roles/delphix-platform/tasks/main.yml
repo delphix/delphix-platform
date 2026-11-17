@@ -110,7 +110,7 @@
     extra_zfs_properties:
       mountpoint: /var/dlpx-update
       compression: gzip
-      quota: 30g
+      quota: "{{ '45g' if variant is search('dct') else '30g' }}"
   when: not ansible_is_chroot
 
 #
@@ -198,6 +198,18 @@
 # so mask the nfs-blkmap.service to keep it from running.
 #
 - command: systemctl mask nfs-blkmap.service
+
+#
+# nfs-server.service only starts while /etc/nfs_server_enabled exists (see
+# nfs-server.service.d/override.conf), so NFS is off by default. Engine
+# variants create the file at engine setup. internal-dcenter has no such
+# setup, so it creates the file here. This is not limited to the image build
+# chroot, so that an upgraded dcenter host also gets the file on first boot.
+#
+- file:
+    path: /etc/nfs_server_enabled
+    state: touch
+  when: variant == 'internal-dcenter'
 
 #
 # By default, the ulimit for core files is set to 0, and the default
@@ -670,6 +682,42 @@
     path: /etc/environment
     state: absent
     regexp: '^\s*PATH\s*='
+
+#
+# Distrust every eMudhra emSign root CA. A "!" prefix in
+# ca-certificates.conf deselects a certificate, and the ca-certificates
+# package keeps that choice across its own upgrades. Java's cacerts is
+# generated from this bundle and Python's certifi reads it directly, so
+# update-ca-certificates removes the roots from all three.
+#
+- replace:
+    path: /etc/ca-certificates.conf
+    regexp: '^(mozilla/emSign_[^/]*\.crt)$'
+    replace: '!\1'
+  register: emsign_roots
+
+#
+# An update only adds and replaces entries in Java's cacerts; it never
+# removes a root that is no longer in the bundle. Deleting cacerts makes
+# ca-certificates-java rebuild it from the bundle, so it holds exactly the
+# roots that remain selected, plus the local certificates.
+#
+- file:
+    path: /etc/ssl/certs/java/cacerts
+    state: absent
+  when: emsign_roots.changed
+
+#
+# During the image build Java can't run, so ca-certificates-java skips the
+# rebuild and the image has no cacerts. Rebuild it whenever it's missing,
+# which happens on the first boot.
+#
+- stat:
+    path: /etc/ssl/certs/java/cacerts
+  register: java_cacerts
+
+- command: update-ca-certificates
+  when: emsign_roots.changed or not java_cacerts.stat.exists
 
 #
 # This is deliberately the last thing in this file. The buildserver

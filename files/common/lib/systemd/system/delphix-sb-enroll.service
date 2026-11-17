@@ -6,10 +6,46 @@ Before=delphix-platform.service
 After=var-delphix.mount local-fs.target
 ConditionPathExists=/var/delphix/server/sb_certs/
 
+#
+# This unit ends by rebooting the appliance, so it must finish before
+# anything that would be left half-done by that reboot. Ordering it
+# before "cloud-init.service" holds back the whole cloud-init sequence
+# on AWS: the Ec2 datasource is "dsmode=net", so "cloud_init_modules"
+# runs in that stage, and it is itself ordered before
+# "cloud-config.target", which gates the "cloud-config" and
+# "cloud-final" stages.
+#
+# Without this, the reboot lands in the middle of the network stage
+# while it is generating the SSH host keys. Cloud-init writes each
+# module's "once-per-instance" semaphore before running the module, so
+# the interrupted module is skipped on every subsequent boot rather
+# than retried, and the appliance is left permanently missing
+# "/etc/ssh/ssh_host_rsa_key" (DLPX-95672). RSA is the one that loses
+# because it is generated first and takes ~100x longer than the ecdsa
+# and ed25519 keys that follow it.
+#
+# This covers the network stage only. A "dsmode=local" datasource runs
+# "cloud_init_modules" in "cloud-init-local.service" instead, so
+# teaching sb-enroll-efivars.sh about a cloud whose datasource is
+# local-mode means ordering before that unit as well.
+#
+Before=cloud-init.service
+
 [Service]
 Type=oneshot
 Environment=SB_AUTH_DIR=/var/delphix/server/sb_certs/
 ExecStart=/var/lib/delphix-sb-enroll/sb-enroll-efivars.sh
+#
+# Bound the blast radius of the ordering above. "cloud-init.service" is
+# itself "Before=sysinit.target" and "Before=network-online.target", and
+# sshd waits on "network-online.target", so a hang in here would leave
+# the appliance neither booted nor reachable -- and "Type=oneshot"
+# otherwise defaults to an infinite start timeout. Enrollment is three
+# EFI SetVariable() calls, so this is orders of magnitude more than it
+# needs. A timeout (like any other failure) only ever releases the
+# ordering, since nothing "Requires=" this unit.
+#
+TimeoutStartSec=120
 # Prevent accidental re-runs the same boot unless you change the inputs
 RemainAfterExit=no
 
