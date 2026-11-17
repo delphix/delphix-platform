@@ -86,7 +86,8 @@ DEPENDS += ansible, \
 	   openssh-server, \
 	   openssl, \
 	   passwd, \
-	   policykit-1, \
+	   pkexec, \
+	   polkitd, \
 	   procps, \
 	   python3, \
 	   python3-netifaces, \
