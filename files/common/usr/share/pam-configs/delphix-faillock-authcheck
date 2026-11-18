@@ -1,0 +1,8 @@
+Name: Delphix faillock failure counter
+Default: yes
+Priority: 0
+Auth-Type: Primary
+Auth:
+        [default=die]   pam_faillock.so authfail audit deny=5 unlock_time=900 onerr=fail
+Auth-Initial:
+        [default=die]   pam_faillock.so authfail audit deny=5 unlock_time=900 onerr=fail
