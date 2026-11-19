@@ -52,8 +52,21 @@ configure)
 	systemctl disable motd-news.service
 	systemctl disable motd-news.timer
 
-	# Disable multipathd service by default. It will be enabled if the iSCSI initiator feature is used
-	systemctl disable multipathd.service
+	#
+	# Turn multipathd off when it first arrives on the engine: on a first
+	# install, and on an upgrade from a version before this package
+	# depended on multipath-tools, whose own install enables the unit from
+	# its vendor preset. dpkg passes the previously configured version in
+	# $2, and multipath-tools became a dependency in 1.0.0-delphix.2025.09.18.
+	# From then on the unit's state belongs to the iSCSI initiator feature,
+	# which enables it when it is turned on, so an upgrade leaves it alone:
+	# an engine whose pool sits on a multipath device cannot import it
+	# without multipathd. The version test can go once every supported
+	# upgrade source ships multipath-tools.
+	#
+	if [ -z "${2:-}" ] || dpkg --compare-versions "$2" lt-nl 1.0.0-delphix.2025.09.18; then
+		systemctl disable multipathd.service
+	fi
 
 	#
 	# Various tools generate mail on the system, e.g. cron, and we don't
