@@ -23,7 +23,6 @@ Before=rsync.service docker.service
 [Service]
 Type=oneshot
 ExecStart=/var/lib/delphix-platform/ansible/apply
-ExecStart=/var/lib/delphix-platform/dynamic-debug
 RemainAfterExit=yes
 
 #
